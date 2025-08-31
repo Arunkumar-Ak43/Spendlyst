@@ -2976,229 +2976,234 @@
         }
 
         function generateArchivedPdf(incomeData, expenseData) {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+            try { // Add a try-catch block for better error diagnostics
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
 
-            const fontFamily = getCssVariable('--font-body');
-            const textColorPrimary = getCssVariable('--text-primary');
-            const textColorSecondary = getCssVariable('--text-secondary');
-            const borderColor = getCssVariable('--border-color');
-            const accentPrimary = getCssVariable('--accent-primary');
-
-
-            doc.setFont('helvetica');
-            doc.setFontSize(18);
-            doc.text("Spendlyst Archived Financial Report", 14, 22); // Changed app name
-            doc.setFontSize(10);
-            doc.setTextColor(100);
-            doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 28);
-
-            let yPos = 40;
+                const fontFamily = getCssVariable('--font-body');
+                const textColorPrimary = getCssVariable('--text-primary');
+                const textColorSecondary = getCssVariable('--text-secondary');
+                const borderColor = getCssVariable('--border-color');
+                const accentPrimary = getCssVariable('--accent-primary');
 
 
-            // Income Table
-            const incomeHeaders = [['Date', 'Source', 'Amount (Rs.)']];
-            const incomeTableData = incomeData.map(income => [
-                new Date(income.date).toLocaleString(),
-                income.source,
-                `Rs. ${income.amount.toFixed(2)}`
-            ]);
+                doc.setFont('helvetica');
+                doc.setFontSize(18);
+                doc.text("Spendlyst Archived Financial Report", 14, 22); // Changed app name
+                doc.setFontSize(10);
+                doc.setTextColor(100);
+                doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 28);
 
-            if (incomeTableData.length > 0) {
-                doc.setFontSize(14);
-                doc.setTextColor(textColorPrimary); // Use variable
-                doc.text("Income Summary", 14, yPos);
-                yPos += 5;
-                doc.autoTable({
-                    startY: yPos,
-                    head: incomeHeaders,
-                    body: incomeTableData,
-                    theme: 'striped',
-                    headStyles: { fillColor: [parseInt(getCssVariable('--accent-primary-rgb').split(',')[0]), parseInt(getCssVariable('--accent-primary-rgb').split(',')[1]), parseInt(getCssVariable('--accent-primary-rgb').split(',')[2])] },
-                    styles: { font: 'helvetica', textColor: textColorPrimary },
-                    margin: { top: 10, left: 14, right: 14 },
-                    didDrawPage: function (data) {
-                        yPos = data.cursor.y + 10; // Update yPos for next table
-                    }
-                });
-            } else {
-                doc.setFontSize(12);
-                doc.setTextColor(textColorSecondary);
-                doc.text("No incomes in this period.", 14, yPos);
-                yPos += 10;
-            }
+                let yPos = 40;
 
-            // Expense Table
-            const expenseHeaders = [['Date', 'Category', 'Description', 'Amount (Rs.)']];
-            const expenseTableData = expenseData.map(expense => [
-                new Date(expense.date).toLocaleString(),
-                expense.category,
-                expense.comment,
-                `Rs. ${expense.amount.toFixed(2)}`
-            ]);
 
-            if (expenseTableData.length > 0) {
-                // Add a new page if current content is too long
-                if (yPos + 50 > doc.internal.pageSize.height) { // Estimate space needed for table title + a few rows
-                    doc.addPage();
-                    yPos = 20; // Reset yPos for new page
+                // Income Table
+                const incomeHeaders = [['Date', 'Source', 'Amount (Rs.)']];
+                const incomeTableData = incomeData.map(income => [
+                    new Date(income.date).toLocaleString(),
+                    income.source,
+                    `Rs. ${income.amount.toFixed(2)}`
+                ]);
+
+                if (incomeTableData.length > 0) {
+                    doc.setFontSize(14);
+                    doc.setTextColor(textColorPrimary); // Use variable
+                    doc.text("Income Summary", 14, yPos);
+                    yPos += 5;
+                    doc.autoTable({
+                        startY: yPos,
+                        head: incomeHeaders,
+                        body: incomeTableData,
+                        theme: 'striped',
+                        headStyles: { fillColor: [parseInt(getCssVariable('--accent-primary-rgb').split(',')[0]), parseInt(getCssVariable('--accent-primary-rgb').split(',')[1]), parseInt(getCssVariable('--accent-primary-rgb').split(',')[2])] },
+                        styles: { font: 'helvetica', textColor: textColorPrimary },
+                        margin: { top: 10, left: 14, right: 14 },
+                        didDrawPage: function (data) {
+                            yPos = data.cursor.y + 10; // Update yPos for next table
+                        }
+                    });
+                } else {
+                    doc.setFontSize(12);
+                    doc.setTextColor(textColorSecondary);
+                    doc.text("No incomes in this period.", 14, yPos);
+                    yPos += 10;
                 }
 
-                doc.setFontSize(14);
-                doc.setTextColor(textColorPrimary);
-                doc.text("Expense Summary", 14, yPos);
-                yPos += 5;
-                doc.autoTable({
-                    startY: yPos,
-                    head: expenseHeaders,
-                    body: expenseTableData,
-                    theme: 'striped',
-                    headStyles: { fillColor: [parseInt(getCssVariable('--accent-primary-rgb').split(',')[0]), parseInt(getCssVariable('--accent-primary-rgb').split(',')[1]), parseInt(getCssVariable('--accent-primary-rgb').split(',')[2])] },
-                    styles: { font: 'helvetica', textColor: textColorPrimary },
-                    margin: { top: 10, left: 14, right: 14 },
-                    didDrawPage: function (data) {
-                        yPos = data.cursor.y + 10; // Update yPos for next content
+                // Expense Table
+                const expenseHeaders = [['Date', 'Category', 'Description', 'Amount (Rs.)']];
+                const expenseTableData = expenseData.map(expense => [
+                    new Date(expense.date).toLocaleString(),
+                    expense.category,
+                    expense.comment,
+                    `Rs. ${expense.amount.toFixed(2)}`
+                ]);
+
+                if (expenseTableData.length > 0) {
+                    // Add a new page if current content is too long
+                    if (yPos + 50 > doc.internal.pageSize.height) { // Estimate space needed for table title + a few rows
+                        doc.addPage();
+                        yPos = 20; // Reset yPos for new page
                     }
+
+                    doc.setFontSize(14);
+                    doc.setTextColor(textColorPrimary);
+                    doc.text("Expense Summary", 14, yPos);
+                    yPos += 5;
+                    doc.autoTable({
+                        startY: yPos,
+                        head: expenseHeaders,
+                        body: expenseTableData,
+                        theme: 'striped',
+                        headStyles: { fillColor: [parseInt(getCssVariable('--accent-primary-rgb').split(',')[0]), parseInt(getCssVariable('--accent-primary-rgb').split(',')[1]), parseInt(getCssVariable('--accent-primary-rgb').split(',')[2])] },
+                        styles: { font: 'helvetica', textColor: textColorPrimary },
+                        margin: { top: 10, left: 14, right: 14 },
+                        didDrawPage: function (data) {
+                            yPos = data.cursor.y + 10; // Update yPos for next content
+                        }
+                    });
+                } else {
+                    // Add a new page if current content is too long
+                    if (yPos + 20 > doc.internal.pageSize.height) {
+                        doc.addPage();
+                        yPos = 20;
+                    }
+                    doc.setFontSize(12);
+                    doc.setTextColor(textColorSecondary);
+                    doc.text("No expense details available.", 14, yPos);
+                    yPos += 10;
+                }
+
+                // NEW: Category Analysis Table
+                const totalIncomeForAnalysis = incomeData.reduce((sum, income) => sum + income.amount, 0);
+                const categoryAnalysisHeaders = [['Category', 'Target %', 'Actual %', 'Status']];
+                const categoryAnalysisData = categories.map(category => {
+                    const spentInCategory = expenseData
+                        .filter(exp => exp.category === category.name)
+                        .reduce((sum, exp) => sum + exp.amount, 0);
+
+                    const actualPercentage = totalIncomeForAnalysis > 0 ? (spentInCategory / totalIncomeForAnalysis * 100) : 0;
+
+                    let status = 'On Track';
+                    if (spentInCategory === 0) {
+                        status = 'No Spending';
+                    } else if (actualPercentage > category.goal) {
+                        status = 'Over Budget';
+                    }
+
+                    return [
+                        category.name,
+                        `${category.goal}%`,
+                        `${actualPercentage.toFixed(2)}%`,
+                        status
+                    ];
                 });
-            } else {
-                // Add a new page if current content is too long
+
+                if (categoryAnalysisData.length > 0) {
+                    if (yPos + 50 > doc.internal.pageSize.height) { doc.addPage(); yPos = 20; }
+                    doc.setFontSize(14);
+                    doc.setTextColor(textColorPrimary);
+                    doc.text("Category Spending Analysis", 14, yPos);
+                    yPos += 5;
+                    doc.autoTable({
+                        startY: yPos,
+                        head: categoryAnalysisHeaders,
+                        body: categoryAnalysisData,
+                        theme: 'striped',
+                        headStyles: { fillColor: [parseInt(getCssVariable('--accent-primary-rgb').split(',')[0]), parseInt(getCssVariable('--accent-primary-rgb').split(',')[1]), parseInt(getCssVariable('--accent-primary-rgb').split(',')[2])] },
+                        styles: { font: 'helvetica', textColor: textColorPrimary },
+                        margin: { top: 10, left: 14, right: 14 },
+                        didDrawPage: function (data) {
+                            yPos = data.cursor.y + 10;
+                        }
+                    });
+                } else {
+                    if (yPos + 20 > doc.internal.pageSize.height) { doc.addPage(); yPos = 20; }
+                    doc.setFontSize(12);
+                    doc.setTextColor(textColorSecondary);
+                    doc.text("No category data to analyze.", 14, yPos);
+                    yPos += 10;
+                }
+
+                // Add a new page for charts if needed
                 if (yPos + 20 > doc.internal.pageSize.height) {
                     doc.addPage();
                     yPos = 20;
                 }
-                doc.setFontSize(12);
-                doc.setTextColor(textColorSecondary);
-                doc.text("No expense details available.", 14, yPos);
-                yPos += 10;
-            }
 
-            // NEW: Category Analysis Table
-            const totalIncomeForAnalysis = incomeData.reduce((sum, income) => sum + income.amount, 0);
-            const categoryAnalysisHeaders = [['Category', 'Target %', 'Actual %', 'Status']];
-            const categoryAnalysisData = categories.map(category => {
-                const spentInCategory = expenseData
-                    .filter(exp => exp.category === category.name)
-                    .reduce((sum, exp) => sum + exp.amount, 0);
-
-                const actualPercentage = totalIncomeForAnalysis > 0 ? (spentInCategory / totalIncomeForAnalysis * 100) : 0;
-
-                let status = 'On Track';
-                if (spentInCategory === 0) {
-                    status = 'No Spending';
-                } else if (actualPercentage > category.goal) {
-                    status = 'Over Budget';
-                }
-
-                return [
-                    category.name,
-                    `${category.goal}%`,
-                    `${actualPercentage.toFixed(2)}%`,
-                    status
-                ];
-            });
-
-            if (categoryAnalysisData.length > 0) {
-                if (yPos + 50 > doc.internal.pageSize.height) { doc.addPage(); yPos = 20; }
                 doc.setFontSize(14);
                 doc.setTextColor(textColorPrimary);
-                doc.text("Category Spending Analysis", 14, yPos);
-                yPos += 5;
-                doc.autoTable({
-                    startY: yPos,
-                    head: categoryAnalysisHeaders,
-                    body: categoryAnalysisData,
-                    theme: 'striped',
-                    headStyles: { fillColor: [parseInt(getCssVariable('--accent-primary-rgb').split(',')[0]), parseInt(getCssVariable('--accent-primary-rgb').split(',')[1]), parseInt(getCssVariable('--accent-primary-rgb').split(',')[2])] },
-                    styles: { font: 'helvetica', textColor: textColorPrimary },
-                    margin: { top: 10, left: 14, right: 14 },
-                    didDrawPage: function (data) {
-                        yPos = data.cursor.y + 10;
-                    }
-                });
-            } else {
-                if (yPos + 20 > doc.internal.pageSize.height) { doc.addPage(); yPos = 20; }
-                doc.setFontSize(12);
-                doc.setTextColor(textColorSecondary);
-                doc.text("No category data to analyze.", 14, yPos);
+                doc.text("Visual Statistics", 14, yPos);
                 yPos += 10;
-            }
 
-            // Add a new page for charts if needed
-            if (yPos + 20 > doc.internal.pageSize.height) {
-                doc.addPage();
-                yPos = 20;
-            }
+                let chartsAdded = false;
+                // Add Bar Chart
+                if (expensesByCategoryBarChart && expensesByCategoryBarChartCanvas.style.display !== 'none') {
+                    const barChartImg = expensesByCategoryBarChartCanvas.toDataURL('image/png', 1.0);
+                    if (yPos + 90 > doc.internal.pageSize.height) { doc.addPage(); yPos = 20; }
+                    doc.addImage(barChartImg, 'PNG', 15, yPos, 180, 90);
+                    yPos += 95;
+                    chartsAdded = true;
+                }
 
-            doc.setFontSize(14);
-            doc.setTextColor(textColorPrimary);
-            doc.text("Visual Statistics", 14, yPos);
-            yPos += 10;
+                if (!chartsAdded) {
+                    doc.setFontSize(10);
+                    doc.setTextColor(textColorSecondary);
+                    doc.text(" - No chart data available for this period.", 14, yPos);
+                    yPos += 10;
+                }
 
-            let chartsAdded = false;
-            // Add Bar Chart
-            if (expensesByCategoryBarChart && expensesByCategoryBarChartCanvas.style.display !== 'none') {
-                const barChartImg = expensesByCategoryBarChartCanvas.toDataURL('image/png', 1.0);
-                if (yPos + 90 > doc.internal.pageSize.height) { doc.addPage(); yPos = 20; }
-                doc.addImage(barChartImg, 'PNG', 15, yPos, 180, 90);
-                yPos += 95;
-                chartsAdded = true;
-            }
+                // NEW: Add Visual Statistics Data Table
+                const statsHeaders = [['Category', 'Amount Spent (Rs.)']];
+                const statsData = categories.map(cat => {
+                    const amountSpent = expenseData
+                        .filter(exp => exp.category === cat.name)
+                        .reduce((sum, exp) => sum + exp.amount, 0);
+                    return [cat.name, `Rs. ${amountSpent.toFixed(2)}`];
+                }).filter(row => parseFloat(row[1].replace('Rs. ', '')) > 0); // Only show categories with spending
 
-            if (!chartsAdded) {
-                doc.setFontSize(10);
-                doc.setTextColor(textColorSecondary);
-                doc.text(" - No chart data available for this period.", 14, yPos);
-                yPos += 10;
-            }
+                if (statsData.length > 0) {
+                    if (yPos + 50 > doc.internal.pageSize.height) { doc.addPage(); yPos = 20; }
+                    doc.setFontSize(12);
+                    doc.setTextColor(textColorPrimary);
+                    doc.text("Chart Data Breakdown", 14, yPos);
+                    yPos += 5;
+                    doc.autoTable({
+                        startY: yPos,
+                        head: statsHeaders,
+                        body: statsData,
+                        theme: 'grid',
+                        headStyles: { fillColor: [149, 165, 166] }, // --accent-secondary color
+                        styles: { font: 'helvetica', textColor: textColorPrimary },
+                        margin: { top: 10, left: 14, right: 14 },
+                        didDrawPage: function (data) { yPos = data.cursor.y + 10; }
+                    });
+                }
 
-            // NEW: Add Visual Statistics Data Table
-            const statsHeaders = [['Category', 'Amount Spent (Rs.)']];
-            const statsData = categories.map(cat => {
-                const amountSpent = expenseData
-                    .filter(exp => exp.category === cat.name)
-                    .reduce((sum, exp) => sum + exp.amount, 0);
-                return [cat.name, `Rs. ${amountSpent.toFixed(2)}`];
-            }).filter(row => parseFloat(row[1].replace('Rs. ', '')) > 0); // Only show categories with spending
+                // Summary Totals
+                if (yPos + 40 > doc.internal.pageSize.height) { doc.addPage(); yPos = 20; }
+                const totalIncome = incomeData.reduce((sum, income) => sum + income.amount, 0);
+                const totalExpenses = expenseData.reduce((sum, expense) => sum + expense.amount, 0);
+                const balance = totalIncome - totalExpenses;
 
-            if (statsData.length > 0) {
-                if (yPos + 50 > doc.internal.pageSize.height) { doc.addPage(); yPos = 20; }
-                doc.setFontSize(12);
+                doc.setFontSize(14);
                 doc.setTextColor(textColorPrimary);
-                doc.text("Chart Data Breakdown", 14, yPos);
-                yPos += 5;
-                doc.autoTable({
-                    startY: yPos,
-                    head: statsHeaders,
-                    body: statsData,
-                    theme: 'grid',
-                    headStyles: { fillColor: [149, 165, 166] }, // --accent-secondary color
-                    styles: { font: 'helvetica', textColor: textColorPrimary },
-                    margin: { top: 10, left: 14, right: 14 },
-                    didDrawPage: function (data) { yPos = data.cursor.y + 10; }
-                });
+                doc.text("Financial Summary", 14, yPos);
+                yPos += 10;
+                doc.setFontSize(12);
+                doc.setTextColor(textColorSecondary);
+                doc.text(`Total Income: Rs. ${totalIncome.toFixed(2)}`, 14, yPos);
+                yPos += 7;
+                doc.text(`Total Expenses: Rs. ${totalExpenses.toFixed(2)}`, 14, yPos);
+                yPos += 7;
+                doc.text(`Period Balance: Rs. ${balance.toFixed(2)}`, 14, yPos);
+
+                // Convert the PDF to a Blob
+                const pdfBlob = doc.output('blob');
+                return pdfBlob;
+            } catch (e) {
+                console.error("Error during PDF generation in generateArchivedPdf:", e);
+                return null; // Return null on failure
             }
-
-            // Summary Totals
-            if (yPos + 40 > doc.internal.pageSize.height) { doc.addPage(); yPos = 20; }
-            const totalIncome = incomeData.reduce((sum, income) => sum + income.amount, 0);
-            const totalExpenses = expenseData.reduce((sum, expense) => sum + expense.amount, 0);
-            const balance = totalIncome - totalExpenses;
-
-            doc.setFontSize(14);
-            doc.setTextColor(textColorPrimary);
-            doc.text("Financial Summary", 14, yPos);
-            yPos += 10;
-            doc.setFontSize(12);
-            doc.setTextColor(textColorSecondary);
-            doc.text(`Total Income: Rs. ${totalIncome.toFixed(2)}`, 14, yPos);
-            yPos += 7;
-            doc.text(`Total Expenses: Rs. ${totalExpenses.toFixed(2)}`, 14, yPos);
-            yPos += 7;
-            doc.text(`Period Balance: Rs. ${balance.toFixed(2)}`, 14, yPos);
-
-            // Convert the PDF to a Blob
-            const pdfBlob = doc.output('blob');
-            return pdfBlob
         }
 
         async function resetMonthlyData() {
@@ -3212,10 +3217,17 @@
                             return;
                         }
 
-                        // Step 1: Generate the PDF blob once.
-                        const pdfBlob = generateArchivedPdf(incomes, expenses);
+                        // Step 1: Ensure charts are rendered and up-to-date.
+                        // This is crucial because generateArchivedPdf depends on the canvas.
+                        updateCharts();
 
-                        // Step 2: Trigger the download using a data URI, which our WebView will catch.
+                        // Step 2: Generate the PDF blob once.
+                        const pdfBlob = generateArchivedPdf(incomes, expenses);
+                        if (!pdfBlob) {
+                            throw new Error("PDF Blob generation failed.");
+                        }
+
+                        // Step 3: Trigger the download using a data URI, which our WebView will catch.
                         const readerForDownload = new FileReader();
                         readerForDownload.readAsDataURL(pdfBlob);
                         readerForDownload.onloadend = function() {
@@ -3223,19 +3235,18 @@
                             const a = document.createElement('a');
                             a.href = dataUrl;
                             a.download = `Spendlyst_Archive_${new Date().toISOString().slice(0, 10)}.pdf`;
-                            // This click is what the DownloadListener in MainActivity is waiting for.
                             a.click();
                         };
 
-                        // Step 3: Archive the data using the same blob.
+                        // Step 4: Archive the data using the same blob.
                         await archiveCurrentMonthData(pdfBlob);
 
-                        // Step 4: Clear current data and update UI.
+                        // Step 5: Clear current data and update UI.
                         incomes = [];
                         expenses = [];
                         lastResetDate = new Date().toISOString().split('T')[0];
                         saveData();
-                        renderAllTabs();
+                        renderAllTabs(); // This will re-render everything with empty data
                         showNotification('Current month\'s data has been archived and reset.');
                     } catch (error) {
                         console.error("Failed to archive data:", error);
