@@ -1,10 +1,15 @@
 package com.spendlyst.app;
 
+import android.app.DownloadManager;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
+import android.webkit.DownloadListener;
+import android.webkit.URLUtil;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-
+import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
@@ -29,6 +34,24 @@ public class MainActivity extends AppCompatActivity {
         webSettings.setJavaScriptEnabled(true);
         // Enable DOM Storage - VERY IMPORTANT for localStorage to work
         webSettings.setDomStorageEnabled(true);
+
+        // Handle PDF downloads
+        myWebView.setDownloadListener(new DownloadListener() {
+            @Override
+            public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
+                DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
+                request.setMimeType(mimetype);
+                request.setTitle(URLUtil.guessFileName(url, contentDisposition, mimetype));
+                request.setDescription("Downloading file...");
+                request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+                request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, URLUtil.guessFileName(url, contentDisposition, mimetype));
+
+                DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+                dm.enqueue(request);
+
+                Toast.makeText(getApplicationContext(), "Downloading PDF...", Toast.LENGTH_LONG).show();
+            }
+        });
 
         myWebView.setWebViewClient(new WebViewClient());
         myWebView.loadUrl("file:///android_asset/Index.html");
