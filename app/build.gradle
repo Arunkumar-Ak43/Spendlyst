@@ -40,5 +40,6 @@ android {
 }
 
 dependencies {
-    // No extra dependencies needed for a simple WebView app
+    // Required for AppCompatActivity and its themes
+    implementation 'androidx.appcompat:appcompat:1.6.1'
 }
