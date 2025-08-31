@@ -1,0 +1,3867 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Spendlyst - Your Financial Harmony</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <style>
+        :root {
+            --font-heading: 'Playfair Display', serif;
+            --font-body: 'Poppins', sans-serif;
+
+            /* New Color Palette (More Vibrant) */
+            --bg-main: #f8f8ff;
+            /* Light Lavender */
+            --bg-surface: #ffffff;
+            /* White */
+            --text-primary: #2c3e50;
+            /* Dark Blue-Gray */
+            --text-secondary: #7f8c8d;
+            /* Slate Gray */
+            --accent-primary: #8e44ad;
+            /* Purple */
+            --accent-primary-rgb: 142, 68, 173;
+            --accent-secondary: #95a5a6;
+            /* Light Gray */
+            --accent-highlight: #f39c12;
+            /* Gold */
+            --accent-highlight-rgb: 243, 156, 18;
+
+            --border-color: #ecf0f1;
+            /* Very Light Gray */
+
+            --shadow-color: rgba(44, 62, 80, 0.15);
+            /* Dark Blue-Gray shadow */
+            --shadow-soft: 0 4px 8px var(--shadow-color);
+            --shadow-medium: 0 6px 12px var(--shadow-color);
+            --shadow-strong: 0 8px 16px var(--shadow-color);
+
+            --border-radius: 12px;
+            --transition-main: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-fast: 0.15s ease-out;
+
+            /* Specific color for danger actions like delete */
+            --color-danger: #e74c3c;
+        }
+
+        /* Dark Mode */
+        body.dark-mode {
+            --bg-main: #34495e;
+            /* Dark Slate Gray */
+            --bg-surface: #2c3e50;
+            /* Even Darker Slate */
+            --text-primary: #ecf0f1;
+            /* Very Light Gray */
+            --text-secondary: #95a5a6;
+            /* Light Gray */
+            --accent-primary: #c0392b;
+            /* Dark Red */
+            --accent-highlight: #f1c40f;
+            /* Bright Yellow */
+            --border-color: #5d737e;
+            --shadow-color: rgba(0, 0, 0, 0.2);
+            --color-danger: #ff6b6b; /* Lighter red for dark mode */
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            font-size: 16px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            transition: background-color var(--transition-main), color var(--transition-main);
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            height: 100vh;
+        }
+
+        /* App Header */
+        .app-header {
+            background: linear-gradient(to right, var(--accent-primary), #9b59b6);
+            color: var(--bg-surface);
+            padding: 0.8rem 1rem;
+            text-align: center;
+            box-shadow: var(--shadow-medium);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            /* Space for dark mode toggle */
+            animation: headerSlideIn 0.6s ease-out;
+        }
+
+        @keyframes headerSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .app-header-logo {
+            font-family: var(--font-heading);
+            font-weight: 700;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .app-header-logo .feather {
+            width: 26px;
+            height: 26px;
+            margin-right: 0.5rem;
+            stroke-width: 2;
+        }
+
+        #darkModeToggle {
+            background: none;
+            border: none;
+            color: var(--bg-surface);
+            cursor: pointer;
+            padding: 0.5rem;
+            transition: transform 0.2s ease-in-out;
+        }
+
+        #darkModeToggle:hover {
+            transform: scale(1.1);
+        }
+
+        #darkModeToggle .feather {
+            width: 22px;
+            height: 22px;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            flex-grow: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            padding-bottom: 85px;
+            /* Space for taller bottom nav */
+        }
+
+        .tab-content {
+            display: none;
+            animation: tabFadeIn var(--transition-main);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes tabFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Motivational Quote Rotator */
+        .quote-rotator {
+            background-color: rgba(var(--accent-primary-rgb), 0.1);
+            color: var(--accent-primary);
+            padding: 0.75rem 1rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1rem;
+            text-align: center;
+            font-family: var(--font-body);
+            font-style: italic;
+            font-size: 0.9rem;
+            border-left: 4px solid var(--accent-highlight);
+            box-shadow: var(--shadow-soft);
+            animation: quoteSlide 1s ease-in-out;
+        }
+
+        @keyframes quoteSlide {
+            0% {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-around;
+            background-color: var(--bg-surface);
+            box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.08);
+            padding: 0.5rem 0;
+            z-index: 1000;
+            border-top: 1px solid var(--border-color);
+            animation: navSlideIn 0.5s ease-out;
+        }
+
+        @keyframes navSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1;
+            padding: 0.5rem 0.2rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.65rem;
+            font-weight: 500;
+            transition: color var(--transition-fast), transform var(--transition-fast);
+            position: relative;
+        }
+
+        .nav-item .feather {
+            width: 22px;
+            height: 22px;
+            margin-bottom: 4px;
+            stroke-width: 2;
+        }
+
+        .nav-item.active {
+            color: var(--accent-highlight);
+            transform: translateY(-2px);
+        }
+
+        .nav-item.active .feather {
+            stroke: var(--accent-highlight);
+        }
+
+        .nav-item:active {
+            transform: scale(0.92);
+        }
+
+        /* General UI Elements */
+        h2 {
+            /* Section titles within tabs */
+            font-family: var(--font-heading);
+            font-size: 1.6rem;
+            color: var(--accent-primary);
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            font-weight: 700;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px dashed var(--border-color);
+        }
+
+        h2 .animated-tab-logo {
+            margin-right: 0.75rem;
+        }
+
+        /* Placeholder for logo */
+
+        h3 {
+            /* Card titles */
+            font-family: var(--font-heading);
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+        }
+
+        h4 {
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .card {
+            background-color: var(--bg-surface);
+            padding: 1.25rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-medium);
+            margin-bottom: 1.25rem;
+            transition: box-shadow var(--transition-main), transform var(--transition-main);
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-strong);
+            transform: translateY(-2px);
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="number"],
+        .form-group input[type="file"],
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            background-color: var(--bg-main);
+            /* Match page bg */
+            font-family: var(--font-body);
+            font-size: 1rem;
+            color: var(--text-primary);
+            transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+        }
+
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.7;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--accent-highlight);
+            box-shadow: 0 0 0 3px rgba(var(--accent-highlight-rgb), 0.2);
+            background-color: var(--bg-surface);
+        }
+
+        .btn {
+            padding: 0.85rem 1.5rem;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-family: var(--font-body);
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color var(--transition-fast), transform var(--transition-fast), box-shadow
+                var(--transition-fast);
+            box-shadow: var(--shadow-soft);
+            position: relative; /* For ripple effect */
+            overflow: hidden; /* For ripple effect */
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+            filter: brightness(1.05);
+        }
+
+        .btn:active {
+            transform: translateY(0px);
+            box-shadow: var(--shadow-xs);
+            filter: brightness(0.95);
+        }
+
+        .btn .feather {
+            margin-right: 0.6rem;
+            width: 18px;
+            height: 18px;
+            stroke-width: 2.5;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-highlight);
+            color: var(--bg-surface);
+        }
+
+        .btn-primary:hover {
+            background-color: #e08e0b;
+            /* Darker gold */
+        }
+
+        .btn-secondary {
+            background-color: var(--accent-secondary);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background-color: #869596;
+            /* Darker gray */
+        }
+
+        /* Ripple effect for buttons */
+        .btn .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3); /* White ripple */
+            animation: ripple-effect 0.6s linear;
+            transform: scale(0);
+            opacity: 1;
+            pointer-events: none;
+        }
+
+        body.dark-mode .btn .ripple {
+            background: rgba(0, 0, 0, 0.3); /* Dark ripple for dark mode */
+        }
+
+
+
+        @keyframes ripple-effect {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        .list-item {
+            padding: 0.85rem 0.25rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: listItemSlideIn 0.4s ease-out forwards; /* Added forwards */
+        }
+
+        @keyframes listItemSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .list-item.fade-out { /* For deletion animation */
+            animation: listItemFadeOut 0.4s ease-out forwards;
+        }
+
+        @keyframes listItemFadeOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(-20px);
+                height: 0;
+                padding-top: 0;
+                padding-bottom: 0;
+                margin-top: 0;
+                margin-bottom: 0;
+                overflow: hidden;
+            }
+        }
+
+        .list-item:last-child {
+            border-bottom: none;
+        }
+
+        .list-item-content strong {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .list-item-content .meta-text {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .list-item-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .list-item-actions .btn-icon {
+            background: none;
+            border: none;
+            padding: 0.2rem;
+            cursor: pointer;
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .list-item-actions .btn-icon:hover {
+            transform: scale(1.1);
+        }
+
+        .list-item-actions .btn-icon .feather {
+            width: 18px;
+            height: 18px;
+            stroke-width: 2;
+            color: var(--text-secondary);
+        }
+
+        .list-item-actions .delete-btn .feather {
+            color: var(--color-danger);
+        }
+
+        .list-item-actions .edit-btn .feather {
+            color: var(--accent-highlight);
+        }
+
+        /* Financial Overview */
+        .financial-overview {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .overview-card {
+            background-color: var(--bg-surface);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            text-align: center;
+            box-shadow: var(--shadow-soft);
+            animation: fadeInScale 0.5s ease-out;
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .overview-card .icon-wrapper {
+            margin-bottom: 0.5rem;
+        }
+
+        .overview-card .icon-wrapper .feather {
+            color: var(--accent-primary);
+            width: 28px;
+            height: 28px;
+        }
+
+        .overview-card h4 {
+            color: var(--text-secondary);
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            text-transform: uppercase;
+        }
+
+        .overview-card .amount {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            transition: color 0.3s ease-in-out; /* Added for balance change */
+        }
+
+        .overview-card .percentage {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        /* Category Section */
+        .category-section .category-header {
+            padding: 0.85rem 1rem;
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            margin-bottom: 0;
+            /* Content will be directly below */
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color var(--transition-fast);
+        }
+
+        .category-section .category-header:hover {
+            background-color: var(--bg-main);
+        }
+
+        .category-section .category-header.expanded {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+            border-bottom: 1px solid transparent;
+            /* Hide bottom border when expanded */
+        }
+
+        .category-section .category-content {
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-top: none;
+            border-radius: 0 0 var(--border-radius) var(--border-radius);
+            background-color: var(--bg-surface);
+            margin-top: 0;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.03);
+            display: none;
+            /* Hidden by default */
+            overflow: hidden; /* For smooth collapse */
+            max-height: 0; /* For smooth collapse */
+            transition: max-height 0.4s ease-out;
+        }
+
+        .category-section .category-content.active {
+            display: block;
+            max-height: 500px; /* Max height for content to expand */
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .category-header-info strong {
+            color: var(--accent-primary);
+        }
+
+        /* Animated Tab Logos - General Styling */
+        .animated-tab-logo {
+            width: 32px;
+            /* Adjust as needed */
+            height: 32px;
+            display: inline-block;
+            vertical-align: middle;
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .animated-tab-logo:hover {
+            transform: scale(1.05);
+        }
+
+        /* Specific Logo Animations */
+
+        /* 1. Tracker: Ledger/Notebook */
+        .logo-tracker svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .logo-tracker .page {
+            fill: var(--bg-surface);
+            stroke: var(--text-secondary);
+            stroke-width: 1;
+        }
+
+        .logo-tracker .lines {
+            stroke: var(--border-color);
+            stroke-width: 0.7;
+        }
+
+        .logo-tracker .rupee-symbol {
+            fill: var(--accent-highlight);
+            transition: transform 0.3s ease-out;
+            transform-origin: center;
+        }
+
+        .logo-tracker:hover .rupee-symbol {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        /* 2. Incomes: Golden Rupee with shimmer */
+        .logo-income svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+        }
+
+        .logo-income .rupee-coin {
+            fill: url(#goldGradient);
+            stroke: var(--accent-highlight);
+            stroke-width: 1;
+            filter: drop-shadow(0 0 3px rgba(var(--accent-highlight-rgb), 0.5));
+        }
+
+        .logo-income .shimmer {
+            fill: white;
+            opacity: 0;
+            transform: translateX(-50%);
+            animation: shimmerEffect 2s infinite linear;
+        }
+
+        @keyframes shimmerEffect {
+            0% {
+                opacity: 0;
+                transform: translateX(-50%);
+            }
+
+            50% {
+                opacity: 0.8;
+                transform: translateX(150%);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateX(250%);
+            }
+        }
+
+        /* 3. Expenses: Cash Register (Simplified) */
+        .logo-expenses svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .logo-expenses .register-body {
+            fill: var(--accent-primary);
+            stroke: var(--text-primary);
+            stroke-width: 1;
+        }
+
+        .logo-expenses .screen {
+            fill: var(--bg-main);
+            stroke: var(--text-secondary);
+            stroke-width: 0.5;
+        }
+
+        .logo-expenses .receipt {
+            fill: var(--bg-surface);
+            stroke: var(--text-secondary);
+            stroke-width: 0.5;
+            transform-origin: top center;
+            transition: transform 0.4s ease-out;
+        }
+
+        .logo-expenses:hover .receipt {
+            transform: translateY(-8px) scaleY(1.2);
+        }
+
+        /* 4. Categories: Hanging Tags */
+        .logo-categories svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+        }
+
+        .logo-categories .tag {
+            fill: var(--accent-secondary);
+            stroke: var(--accent-primary);
+            stroke-width: 1;
+            transform-origin: top center;
+            animation: sway 3s ease-in-out infinite alternate;
+        }
+
+        .logo-categories .tag-text {
+            font-family: var(--font-body);
+            font-size: 5px;
+            fill: var(--text-primary);
+        }
+
+        .logo-categories .tag:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .logo-categories .tag:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes sway {
+            0% {
+                transform: rotate(-5deg);
+            }
+
+            50% {
+                transform: rotate(5deg);
+            }
+
+            100% {
+                transform: rotate(-5deg);
+            }
+        }
+
+        /* 5. Statistics: Pie Chart Steaming into Bars */
+        .logo-statistics svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+        }
+
+        .logo-statistics .pie-base {
+            fill: var(--bg-surface);
+            stroke: var(--accent-primary);
+            stroke-width: 1;
+        }
+
+        .logo-statistics .pie-segment {
+            fill: var(--accent-highlight);
+            transition: fill 0.3s;
+        }
+
+        .logo-statistics:hover .pie-segment {
+            fill: var(--accent-primary);
+        }
+
+        .logo-statistics .bar {
+            fill: var(--accent-highlight);
+            transform-origin: bottom;
+            transform: scaleY(0);
+            opacity: 0;
+            transition: transform 0.5s ease-out, opacity 0.5s ease-out;
+        }
+
+        .logo-statistics:hover .bar {
+            transform: scaleY(1);
+            opacity: 1;
+        }
+
+        .logo-statistics .bar:nth-child(1) {
+            transition-delay: 0.1s;
+        }
+
+        .logo-statistics .bar:nth-child(2) {
+            transition-delay: 0.2s;
+        }
+
+        .logo-statistics .bar:nth-child(3) {
+            transition-delay: 0.3s;
+        }
+
+        /* 6. Settings (Backup): Vault with Rotating Gear */
+        .logo-settings svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .logo-settings .vault-body {
+            fill: var(--accent-secondary);
+            stroke: var(--text-primary);
+            stroke-width: 1;
+        }
+
+        .logo-settings .door {
+            fill: var(--bg-surface);
+            stroke: var(--text-primary);
+            stroke-width: 1;
+        }
+
+        .logo-settings .dial {
+            fill: var(--accent-highlight);
+            stroke: var(--text-primary);
+            stroke-width: 0.7;
+            transform-origin: center;
+            animation: spinDial 10s linear infinite;
+        }
+
+        @keyframes spinDial {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* 7. Reports: Folded Report Paper */
+        .logo-reports svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .logo-reports .paper-body {
+            fill: var(--bg-surface);
+            stroke: var(--accent-primary);
+            stroke-width: 1;
+        }
+
+        .logo-reports .fold {
+            fill: var(--bg-main);
+            stroke: var(--accent-primary);
+            stroke-width: 0.7;
+            transition: transform 0.4s ease-in-out;
+            transform-origin: left center;
+        }
+
+        .logo-reports:hover .fold {
+            transform: perspective(300px) rotateY(-30deg);
+        }
+
+        .logo-reports .lines {
+            stroke: var(--border-color);
+            stroke-width: 0.5;
+        }
+
+        /* 8. About: Info Icon */
+        .logo-about svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .logo-about .circle {
+            fill: var(--accent-primary);
+            transition: fill 0.3s ease-in-out;
+        }
+
+        .logo-about .i-dot {
+            fill: var(--bg-surface);
+        }
+
+        .logo-about .i-stem {
+            fill: var(--bg-surface);
+            transform-origin: bottom center;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .logo-about:hover .circle {
+            fill: var(--accent-highlight);
+        }
+
+        .logo-about:hover .i-stem {
+            transform: scaleY(1.1);
+        }
+
+        /* Modal & Notification */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: var(--bg-surface);
+            margin: auto;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-strong);
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .close-button {
+            color: var(--text-secondary);
+            font-size: 1.8rem;
+            font-weight: bold;
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            cursor: pointer;
+            transition: color 0.2s ease-in-out;
+        }
+
+        .close-button:hover,
+        .close-button:focus {
+            color: var(--accent-primary);
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .notification-bar {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--accent-primary);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-medium);
+            z-index: 1000;
+            display: none;
+            opacity: 0;
+            animation: toastFadeIn 0.5s forwards;
+        }
+
+        .notification-bar.active {
+            display: block;
+        }
+
+        @keyframes toastFadeIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        @keyframes toastFadeOut {
+            from {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+
+            to {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px);
+            }
+        }
+
+        #geminiTipsModal .modal-content,
+        #savingsTipsModal .modal-content,
+        #goalPlannerModal .modal-content,
+        #spendingAnalysisModal .modal-content { /* Added for new modal */
+            background-color: var(--bg-surface);
+        }
+
+        #geminiTipsList li,
+        #savingsTipsList li,
+        #goalPlanOutput li,
+        #spendingAnalysisOutput li { /* Added for new modal */
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.75rem 0;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
+        #geminiTipsList li:last-child,
+        #savingsTipsList li:last-child,
+        #goalPlanOutput li:last-child,
+        #spendingAnalysisOutput li:last-child { /* Added for new modal */
+            border-bottom: none;
+        }
+
+        /* Chart Wrapper */
+        .charts-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .chart-wrapper {
+            background-color: var(--bg-surface);
+            padding: 1.25rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-soft);
+            text-align: center;
+            animation: fadeInScale 0.5s ease-out;
+        }
+
+        .chart-wrapper h4 {
+            margin-bottom: 1rem;
+            color: var(--accent-primary);
+        }
+
+        .chart-wrapper canvas {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .chart-wrapper .empty-state {
+            padding: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* Empty State Styling */
+        .empty-state {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: var(--text-secondary);
+            font-style: italic;
+            border: 1px dashed var(--border-color);
+            border-radius: var(--border-radius);
+            margin-top: 1rem;
+        }
+
+        .empty-state .feather {
+            width: 32px;
+            height: 32px;
+            margin-bottom: 0.5rem;
+            color: var(--accent-secondary);
+        }
+
+        /* Footer Styling */
+        .app-footer {
+            background-color: var(--bg-surface);
+            color: var(--text-secondary);
+            text-align: center;
+            padding: 1rem;
+            font-size: 0.8rem;
+            border-top: 1px solid var(--border-color);
+            margin-top: auto; /* Pushes footer to the bottom */
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        /* About Page Specific Styles */
+        .about-section p {
+            margin-bottom: 0.75rem;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .about-section strong {
+            color: var(--accent-primary);
+        }
+
+        .about-section a {
+            color: var(--accent-highlight);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease-in-out;
+        }
+
+        .about-section a:hover {
+            text-decoration: underline;
+            color: #e08e0b; /* Slightly darker gold on hover */
+        }
+
+        /* NEW: Category Jars Styles */
+        .category-jars-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 1.5rem;
+            padding-top: 1rem;
+        }
+
+        .category-jar {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .category-jar-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+        }
+
+        .jar-visual {
+            width: 90px;
+            height: 75px;
+            background-color: var(--bg-main);
+            border: 2px solid var(--border-color);
+            border-radius: 15px 15px 45px 45px; /* Pot shape */
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            margin-top: 10px; /* Space for the rim */
+        }
+
+        .jar-visual::before {
+            content: '';
+            position: absolute;
+            top: -5px; /* Position the rim just above the pot */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 105%; /* Rim is wider than the pot */
+            height: 10px;
+            background-color: var(--bg-main);
+            border: 2px solid var(--border-color);
+            border-radius: 8px; /* Rounded rim */
+        }
+
+        .jar-fill {
+            width: 100%;
+            transition: height 0.5s var(--transition-main), background-color 0.5s var(--transition-main);
+            position: absolute;
+            bottom: 0;
+        }
+
+        .jar-fill-normal { background: linear-gradient(to top, #2ecc71, #27ae60); } /* Green */
+        .jar-fill-over { background: linear-gradient(to top, #e74c3c, #c0392b); } /* Red */
+
+        .jar-percentage { margin-top: 0.5rem; font-size: 0.8rem; font-weight: 500; color: var(--text-primary); }
+
+        /* NEW: Notepad Toolbar Styles */
+        .notepad-toolbar {
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 10px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .notepad-tool-btn {
+            background: var(--bg-main);
+            border: 1px solid var(--border-color);
+            padding: 0.5rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: background-color var(--transition-fast), transform var(--transition-fast);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            position: relative; /* For color picker positioning */
+        }
+
+        .notepad-tool-btn:hover {
+            background-color: var(--border-color);
+            transform: scale(1.05);
+        }
+
+        .notepad-tool-btn .feather {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Hide the actual color input but keep it functional via its label */
+        .notepad-tool-btn input[type="color"] {
+            display: none;
+        }
+
+        #notepadEditor {
+            width: 100%;
+            height: 300px;
+            padding: 10px;
+            font-family: var(--font-body);
+            font-size: 1rem;
+            color: var(--text-primary);
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            overflow-y: auto;
+        }
+        /* Responsive Adjustments */
+        @media (min-width: 768px) {
+            .main-content {
+                padding: 1.5rem;
+            }
+
+            .financial-overview {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .charts-container {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+
+            .chart-wrapper {
+                flex: 1;
+                min-width: 45%;
+            }
+
+            .bottom-nav {
+                position: static;
+                /* Remove fixed position on larger screens */
+                padding: 1rem 0;
+                border-top: none;
+                box-shadow: none;
+                background-color: transparent;
+            }
+
+            .app-container {
+                display: grid;
+                grid-template-columns: 200px 1fr;
+                /* Sidebar + Content */
+                height: 100vh;
+            }
+
+            .app-header {
+                grid-column: 1 / -1;
+                /* Span full width */
+            }
+
+            .bottom-nav {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 1rem;
+                background-color: var(--bg-surface);
+                box-shadow: var(--shadow-medium);
+                border-right: 1px solid var(--border-color);
+                border-radius: 0 var(--border-radius) var(--border-radius) 0;
+            }
+
+            .nav-item {
+                flex-direction: row;
+                justify-content: flex-start;
+                padding: 0.75rem 1rem;
+                width: 100%;
+                font-size: 0.9rem;
+                border-radius: var(--border-radius);
+                margin-bottom: 0.5rem;
+            }
+
+            .nav-item.active {
+                background-color: rgba(var(--accent-highlight-rgb), 0.1);
+                transform: none;
+            }
+
+            .main-content {
+                padding-bottom: 1rem;
+                /* Reset padding for desktop */
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="app-header-logo">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16 3L29 10L16 17L3 10L16 3Z" fill="url(#mainGradient)" stroke="white" stroke-width="2" />
+                    <path d="M16 17L29 24L16 31L3 24L16 17Z" fill="url(#mainGradient)" stroke="white" stroke-width="2" />
+                    <path d="M3 10L3 24L16 31L16 17L3 10Z" fill="url(#mainGradient)" opacity="0.8" />
+                    <path d="M29 10L29 24L16 31L16 17L29 10Z" fill="url(#mainGradient)" opacity="0.8" />
+                    <defs>
+                        <linearGradient id="mainGradient" x1="3" y1="3" x2="29" y2="31" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#f39c12" />
+                            <stop offset="1" stop-color="#8e44ad" />
+                        </linearGradient>
+                    </defs>
+                </svg>
+                <span>Spendlyst</span>
+            </div>
+            <button id="darkModeToggle" aria-label="Toggle Dark Mode">
+                <i data-feather="moon"></i>
+            </button>
+        </header>
+
+        <nav class="bottom-nav">
+            <a href="#" class="nav-item active" data-tab="tracker">
+                <i data-feather="activity"></i>
+                <span>Tracker</span>
+            </a>
+            <a href="#" class="nav-item" data-tab="incomes">
+                <i data-feather="trending-up"></i>
+                <span>Incomes</span>
+            </a>
+            <a href="#" class="nav-item" data-tab="expenses">
+                <i data-feather="trending-down"></i>
+                <span>Expenses</span>
+            </a>
+            <a href="#" class="nav-item" data-tab="categories">
+                <i data-feather="tag"></i>
+                <span>Categories</span>
+            </a>
+            <a href="#" class="nav-item" data-tab="statistics">
+                <i data-feather="bar-chart-2"></i>
+                <span>Statistics</span>
+            </a>
+             <a href="#" class="nav-item" data-tab="notepad"><i data-feather="edit"></i><span>Notepad</span></a>
+            <a href="#" class="nav-item" data-tab="settings">
+                <i data-feather="settings"></i>
+                <span>Settings</span>
+            </a>
+            <!-- About tab removed from main nav and moved to settings -->
+        </nav>
+
+        
+
+
+        <main class="main-content">
+            <div class="quote-rotator" id="quoteRotator">
+                Every rupee saved is a step toward freedom.
+            </div>
+
+            <section id="tracker" class="tab-content active">
+                <h2>
+                    <span class="animated-tab-logo logo-tracker">
+                        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="6" y="4" width="20" height="24" rx="2" class="page" />
+                            <path d="M8 8h16M8 12h12M8 16h16M8 20h12M8 24h16" class="lines" />
+                            <path d="M16 10L16 22M12 14L20 14" stroke="var(--accent-highlight)" stroke-width="2"
+                                class="rupee-symbol" />
+                            <circle cx="16" cy="16" r="2" fill="var(--accent-highlight)" opacity="0.3"
+                                class="rupee-symbol-dot" />
+                        </svg>
+                    </span>
+                    Daily Tracker
+                </h2>
+                <div class="financial-overview">
+                    <div class="overview-card">
+                        <div class="icon-wrapper"><i data-feather="arrow-down-circle"></i></div>
+                        <h4>Total Income</h4>
+                        <p class="amount" id="totalIncomeDisplay">₹0.00</p>
+                    </div>
+                    <div class="overview-card">
+                        <div class="icon-wrapper"><i data-feather="arrow-up-circle"></i></div>
+                        <h4>Total Expenses</h4>
+                        <p class="amount" id="totalExpensesDisplay">₹0.00</p>
+                    </div>
+                    <div class="overview-card">
+                        <div class="icon-wrapper"><i data-feather="briefcase"></i></div>
+                        <h4>Current Balance</h4>
+                        <p class="amount" id="remainingBalanceDisplay">₹0.00</p>
+                    </div>
+                    <div class="overview-card">
+                        <div class="icon-wrapper"><i data-feather="pie-chart"></i></div>
+                        <h4>Balance %</h4>
+                        <p class="percentage" id="remainingPercentageDisplay">(0%)</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>All Transactions</h3>
+                        <input type="text" id="searchAllExpenses" placeholder="Search transactions..." class="form-group"
+                            style="margin-bottom:0; max-width:180px; padding: 0.6rem; font-size:0.9rem; border-radius:var(--border-radius);">
+                    </div>
+                    <div id="allExpensesList" class="list-container">
+                        <div class="empty-state"><i data-feather="list"></i>
+                            <p>No transactions recorded yet.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Expenses by Category</h3>
+                    </div>
+                    <div id="expensesByCategory">
+                        <div class="empty-state"><i data-feather="tag"></i>
+                            <p>Define your categories first.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="incomes" class="tab-content">
+                <h2>
+                    <span class="animated-tab-logo logo-income">
+                        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#FFD700" />
+                                    <stop offset="50%" stop-color="#FFA500" />
+                                    <stop offset="100%" stop-color="#FFD700" />
+                                </linearGradient>
+                            </defs>
+                            <circle cx="16" cy="16" r="12" class="rupee-coin" />
+                            <path d="M13 10h6m-3 0v12m-3 0h6" stroke="white" stroke-width="1.5" />
+                            <rect x="0" y="0" width="10" height="32" class="shimmer" />
+                        </svg>
+                    </span>
+                    Incomes
+                </h2>
+                <div class="card">
+                    <h3><i data-feather="plus-circle" style="vertical-align:middle; margin-right:0.3rem; width:20px;"></i>Add
+                        New Income</h3>
+                    <form id="addIncomeForm">
+                        <div class="form-group">
+                            <label for="incomeSource">Source</label>
+                            <input type="text" id="incomeSource" required placeholder="e.g., Paycheck, Freelance">
+                        </div>
+                        <div class="form-group">
+                            <label for="incomeAmount">Amount (₹)</label>
+                            <input type="number" id="incomeAmount" step="0.01" min="0" required placeholder="0.00">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block"><i data-feather="check-circle"></i> Add
+                            Income</button>
+                    </form>
+                </div>
+                <div class="card">
+                    <h3><i data-feather="list" style="vertical-align:middle; margin-right:0.3rem; width:20px;"></i>Income
+                        History</h3>
+                    <div id="incomeHistoryList" class="list-container">
+                        <div class="empty-state"><i data-feather="dollar-sign"></i>
+                            <p>No incomes recorded yet.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="expenses" class="tab-content">
+                <h2>
+                    <span class="animated-tab-logo logo-expenses">
+                        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="5" y="8" width="22" height="18" rx="2" class="register-body" />
+                            <rect x="8" y="11" width="16" height="4" rx="1" class="screen" />
+                            <path d="M10 18h2m0 0v2m0-2h-2" stroke="var(--text-primary)" stroke-width="1.5" />
+                            <path d="M20 18h2m0 0v2m0-2h-2" stroke="var(--text-primary)" stroke-width="1.5" />
+                            <rect x="13" y="22" width="6" height="3" rx="0.5" class="receipt" />
+                        </svg>
+                    </span>
+                    Expenses
+                </h2>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Log Your Expenses</h3>
+                        <select id="quickAddExpenseCategory" class="form-group"
+                            style="margin-bottom:0; max-width:150px; padding: 0.6rem; font-size:0.9rem; border-radius:var(--border-radius);">
+                        </select>
+                    </div>
+                    <form id="quickAddExpenseForm">
+                        <div class="form-group">
+                            <label for="quickExpenseAmount">Amount (₹)</label>
+                            <input type="number" id="quickExpenseAmount" step="0.01" min="0" required
+                                placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label for="quickExpenseComment">Comment (Optional)</label>
+                            <input type="text" id="quickExpenseComment" placeholder="e.g., Groceries, Rent">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block"><i data-feather="plus-circle"></i> Add
+                            Expense</button>
+                    </form>
+                </div>
+                <div class="card">
+                    <h3>Recent Expenses</h3>
+                    <div id="recentExpensesList" class="list-container">
+                        <div class="empty-state"><i data-feather="shopping-cart"></i>
+                            <p>No expenses recorded today.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="categories" class="tab-content">
+                <h2>
+                    <span class="animated-tab-logo logo-categories">
+                        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M16 4L28 10L16 16L4 10L16 4Z" fill="var(--accent-highlight)" class="tag" />
+                            <path d="M16 16L28 22L16 28L4 22L16 16Z" fill="var(--accent-primary)" class="tag" />
+                            <path d="M16 10L16 22" stroke="white" stroke-width="1" />
+                            <text x="16" y="12" text-anchor="middle" fill="white" font-size="6" class="tag-text">TAGS
+                            </text>
+                        </svg>
+                    </span>
+                    Categories
+                </h2>
+                <div class="card">
+                    <h3><i data-feather="folder-plus" style="vertical-align:middle; margin-right:0.3rem; width:20px;"></i>Create
+                        New Category</h3>
+                    <form id="addCategoryForm">
+                        <div class="form-group">
+                            <label for="categoryName">Category Name</label>
+                            <input type="text" id="categoryName" required placeholder="e.g., Food, Transport">
+                        </div>
+                        <div class="form-group">
+                            <label for="categoryGoal">Target % of Income</label>
+                            <input type="number" id="categoryGoal" min="0" max="100" step="1" required
+                                placeholder="0-100">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block"><i data-feather="check-circle"></i> Add
+                            Category</button>
+                    </form>
+                </div>
+                <div class="card">
+                    <h3><i data-feather="edit" style="vertical-align:middle; margin-right:0.3rem; width:20px;"></i>Manage
+                        Categories</h3>
+                    <p style="margin-bottom: 0.75rem; font-size: 0.9rem; color: var(--text-secondary);">Total Target:
+                        <strong id="totalGoalPercentageDisplay" style="color: var(--accent-primary);">0%</strong>
+                    </p>
+                    <div id="manageCategoriesList" class="list-container">
+                        <div class="empty-state"><i data-feather="tag"></i>
+                            <p>No categories defined yet.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="statistics" class="tab-content">
+                <h2>
+                    <span class="animated-tab-logo logo-statistics">
+                        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="16" cy="16" r="12" class="pie-base"/>
+                            <path d="M16 16 L16 4 A12 12 0 0 1 24 16 Z" fill="var(--accent-highlight)" class="pie-segment"/>
+                            <path d="M16 16 L24 16 A12 12 0 0 1 16 28 Z" fill="var(--accent-primary)" class="pie-segment"/>
+                            <path d="M16 16 L16 28 A12 12 0 0 1 8 16 Z" fill="var(--accent-secondary)"
+                                class="pie-segment" />
+
+                            <rect x="6" y="28" width="4" height="0" class="bar" fill="var(--accent-highlight)" />
+                            <rect x="14" y="28" width="4" height="0" class="bar" fill="var(--accent-primary)" />
+                            <rect x="22" y="28" width="4" height="0" class="bar" fill="var(--accent-secondary)" />
+                        </svg>
+                    </span>
+                    Statistics
+                </h2>
+                <div class="card">
+                    <h3>Category Spending Jars</h3>
+                    <div id="categoryJarsContainer" class="category-jars-container">
+                        <div class="empty-state" style="grid-column: 1 / -1;">
+                            <i data-feather="droplet"></i>
+                            <p>No categories defined to show spending jars.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Visual Reports</h3>
+                        <div style="display:flex; gap:0.5rem; display:none;">
+                            <button id="exportToExcelBtn" class="btn btn-secondary btn-sm" disabled><i
+                                    data-feather="file-text"></i> Excel</button>
+                            <button id="exportChartPdfBtn" class="btn btn-secondary btn-sm" disabled><i
+                                    data-feather="file"></i> PDF</button>
+                        </div>
+                    </div>
+                    <div class="charts-container">
+                        <div class="chart-wrapper">
+                            <h4>Expenses by Category (Bar)</h4>
+                            <canvas id="expensesByCategoryBarChart"></canvas>
+                            <p id="expensesByCategoryBarChartEmpty" class="empty-state"
+                                style="display:none; padding:0.5rem; font-size:0.8rem;">Not enough data for this chart.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="reports" class="tab-content">
+                <h2>
+                    <span class="animated-tab-logo logo-reports">
+                        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="6" y="4" width="20" height="24" rx="2" fill="var(--bg-surface)"
+                                stroke="var(--accent-primary)" stroke-width="1.5" class="paper-body" />
+                            <path d="M6 8h20M6 12h10M6 16h14M6 20h8" stroke="var(--border-color)" stroke-width="0.7"
+                                class="lines" />
+                            <path d="M26 4L22 8L26 12L26 4Z" fill="var(--bg-main)" stroke="var(--accent-primary)"
+                                stroke-width="0.7" class="fold" />
+                        </svg>
+                    </span>
+                    Reports
+                </h2>
+                <div class="card">
+                    <h3>Generate Custom Reports</h3>
+                    <div class="form-group">
+                        <label for="reportStartDate">Start Date</label>
+                        <input type="date" id="reportStartDate" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="reportEndDate">End Date</label>
+                        <input type="date" id="reportEndDate" class="form-control">
+                    </div>
+                    <div style="display:flex; gap:0.5rem; margin-bottom: 1rem;">
+                        <button id="generateReportBtn" class="btn btn-primary flex-grow"><i data-feather="file-text"></i>
+                            Generate Report</button>
+                        <button id="exportReportPdfBtn" class="btn btn-secondary flex-grow" disabled><i
+                                data-feather="file"></i> Export Report to PDF</button>
+                    </div>
+                </div>
+                <div class="card" style="text-align: center;">
+                    <button id="getGoalPlanBtn" class="btn btn-primary" style="margin-top:1rem;">
+                        <i data-feather="target"></i> Financial Goal Planner ✨
+                    </button>
+                </div>
+                <div class="card">
+                    <h3>Generated Report</h3>
+                    <div id="generatedReportContent">
+                        <div class="empty-state"><i data-feather="clipboard"></i>
+                            <p>No report generated yet.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="settings" class="tab-content">
+                <h2>
+                    <span class="animated-tab-logo logo-settings">
+                        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="6" y="6" width="20" height="20" rx="2" fill="var(--accent-secondary)"
+                                stroke="var(--text-primary)" stroke-width="1.5" class="vault-body" />
+                            <rect x="10" y="10" width="12" height="12" rx="1" fill="var(--bg-surface)"
+                                stroke="var(--text-primary)" stroke-width="1" class="door" />
+                            <circle cx="16" cy="16" r="4" fill="var(--accent-highlight)" stroke="var(--text-primary)"
+                                stroke-width="0.7" class="dial" />
+                            <circle cx="16" cy="16" r="1" fill="var(--text-primary)" />
+                        </svg>
+                    </span>
+                    Settings & Backup
+                </h2>
+                <div class="card">
+                    <h3>Data Management</h3>
+                    <div class="form-group">
+                        <button id="resetMonthlyBtn" class="btn btn-danger btn-block"><i data-feather="refresh-cw"></i>
+                            Reset Current Month Data</button>
+                    </div>
+                    <div class="form-group">
+                        <button id="clearArchivedDataBtn" class="btn btn-danger btn-block"><i data-feather="archive"></i>
+                            Clear All Archived Data</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Archived Months</h3>
+                    <div id="archivedMonthsList" class="list-container">
+                        <div class="empty-state"><i data-feather="archive"></i>
+                            <p>No archived data yet.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>App Preferences</h3>
+                    <div class="form-group">
+                        <label for="resetDayOfMonth">Monthly Reset Day</label>
+                        <input type="number" id="resetDayOfMonth" min="1" max="31" value="1"
+                            class="form-control">
+                        <small style="font-size:0.8rem; color:var(--text-secondary);">Day of month to automatically
+                            reset expenses (e.g., 1 for the 1st).</small>
+                    </div>
+                    <div class="form-group">
+                        <input type="checkbox" id="enableAutoReset" style="margin-right: 0.5rem;">
+                        <label for="enableAutoReset" style="display: inline-block; margin-bottom: 0;">Enable Automatic Monthly Reset</label>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>About Spendlyst</h3>
+                    <p><strong>Spendlyst</strong> is your personal financial harmony tracker, designed to help you effortlessly manage your incomes and expenses. Keep track of where your money goes, set spending goals, and gain valuable insights into your financial health.</p>
+                    <p>This application aims to provide a simple, intuitive, and powerful tool for everyday financial management, empowering you to make smarter financial decisions.</p>
+                    <p><strong>Developer:</strong> Arun</p>
+                    <p><strong>Email:</strong> <a href="mailto:contact.arunofficial43@gmail.com" target="_blank">contact.arunofficial43@gmail.com</a></p>
+                    <p><strong>Github:</strong> <a href="https://github.com/Arunkumar-Ak43/Main" target="_blank">github.com/Arunkumar</a></p>
+                </div>
+            </section>
+             <section id="notepad" class="tab-content">
+                <h2>
+                    <span class="animated-tab-logo logo-tracker">
+                    </span>
+                    Notepad
+                </h2>
+                <div class="card">
+                    <div class="notepad-toolbar">
+                        <button id="notepad-bold-btn" class="notepad-tool-btn" title="Bold"><i data-feather="bold"></i></button>
+                        <button id="notepad-underline-btn" class="notepad-tool-btn" title="Underline"><i data-feather="underline"></i></button>
+                        <button id="notepad-italic-btn" class="notepad-tool-btn" title="Italic"><i data-feather="italic"></i></button>
+                        <button id="notepad-increase-font-btn" class="notepad-tool-btn" title="Increase Font Size"><i data-feather="plus"></i></button>
+                        <button id="notepad-decrease-font-btn" class="notepad-tool-btn" title="Decrease Font Size"><i data-feather="minus"></i></button>
+                        <label for="notepad-text-color-picker" class="notepad-tool-btn" title="Text Color">
+                            <i data-feather="droplet"></i>
+                            <input type="color" id="notepad-text-color-picker" value="#2c3e50">
+                        </label>
+                        <label for="notepad-highlight-color-picker" class="notepad-tool-btn" title="Highlight Color">
+                            <i data-feather="edit-3"></i>
+                            <input type="color" id="notepad-highlight-color-picker" value="#f39c12">
+                        </label>
+                        <button id="notepad-clear-format-btn" class="notepad-tool-btn" title="Clear All Content"><i data-feather="trash-2"></i></button>
+                    </div>
+                    <div id="notepadEditor" contenteditable="true"></div>
+                </div>
+            </section>
+
+            <!-- About section removed from its own tab -->
+
+        </main>
+        <footer class="app-footer">
+            <p>Powered by Arun</p>
+        </footer>
+    </div>
+
+    <div id="notificationModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeNotificationModal">&times;</span>
+            <h3 id="notificationTitle"></h3>
+            <p id="notificationMessage"></p>
+        </div>
+    </div>
+
+    <div id="confirmationModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeConfirmationModal">&times;</span>
+            <h3 id="confirmModalTitle">Confirm Action</h3>
+            <p id="confirmModalMessage"></p>
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:15px;">
+                <button id="confirmModalConfirmBtn" class="btn btn-primary">Yes</button>
+                <button id="confirmModalCancelBtn" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="geminiTipsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeGeminiTipsModal">&times;</span>
+            <h3>Financial Insights ✨</h3>
+            <ul id="geminiTipsList">
+                </ul>
+        </div>
+    </div>
+
+    <div id="savingsTipsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeSavingsTipsModal">&times;</span>
+            <h3>Savings Strategies ✨</h3>
+            <ul id="savingsTipsList">
+                </ul>
+        </div>
+    </div>
+
+    <div id="goalPlannerModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeGoalPlannerModal">&times;</span>
+            <h3>Financial Goal Planner ✨</h3>
+            <div class="form-group">
+                <label for="goalInput">Describe your financial goal:</label>
+                <textarea id="goalInput" rows="4" placeholder="e.g., Save ₹5,00,000 for a house down payment in 5 years, Pay off ₹1,00,000 credit card debt in 2 years."></textarea>
+            </div>
+            <button id="generateGoalPlanBtn" class="btn btn-primary btn-block"><i data-feather="zap"></i> Generate Plan</button>
+            <div id="goalPlanOutput" class="list-container" style="margin-top:1.5rem;">
+                <div class="empty-state"><i data-feather="lightbulb"></i>
+                    <p>Enter your goal above to get a personalized plan.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: Spending Analysis Modal -->
+    <div id="spendingAnalysisModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeSpendingAnalysisModal">&times;</span>
+            <h3>Spending Habits Analysis ✨</h3>
+            <div id="spendingAnalysisOutput" class="list-container">
+                <div class="empty-state"><i data-feather="bar-chart"></i>
+                    <p>Your spending analysis will appear here.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="notificationBar" class="notification-bar"></div>
+
+    <script>
+        // Register Service Worker (for PWA capabilities, not strictly needed for WebView APK but good practice)
+        if ('serviceWorker' in navigator) {
+            // Only register the service worker if running on a web server (http/https), not from a local file.
+            if (location.protocol.startsWith('http')) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('spendlyst-sw.js') // Use relative path
+                        .then(registration => console.log('ServiceWorker registration successful with scope: ', registration.scope))
+                        .catch(err => console.log('ServiceWorker registration failed: ', err));
+                });
+            }
+        }
+
+        // Helper function to convert Blob to Base64 for Android Bridge
+        function blobToBase64(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result.split(',')[1]); // remove data:mime/type;base64,
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        // Helper function to get computed CSS variable values
+        function getCssVariable(variableName) {
+            return getComputedStyle(document.documentElement).getPropertyValue(variableName).trim();
+        }
+
+        // Global variables for data storage
+        let incomes = JSON.parse(localStorage.getItem('incomes')) || [];
+        let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
+        let categories = JSON.parse(localStorage.getItem('categories')) || [];
+        let lastResetDate = localStorage.getItem('lastResetDate') || null;
+        let resetDayOfMonth = parseInt(localStorage.getItem('resetDayOfMonth')) || 1;
+        let enableAutoReset = localStorage.getItem('enableAutoReset') === 'true'; // New preference
+
+        // NEW: Store archived data as an object where keys are "YYYY-MM"
+        let archivedMonths = JSON.parse(localStorage.getItem('archivedMonths')) || {};
+
+        // DOM Elements
+        const navLinks = document.querySelectorAll('.nav-item');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const quoteRotator = document.getElementById('quoteRotator');
+        const darkModeToggle = document.getElementById('darkModeToggle');
+
+        // Tracker Tab Elements
+        const totalIncomeDisplay = document.getElementById('totalIncomeDisplay');
+        const totalExpensesDisplay = document.getElementById('totalExpensesDisplay');
+        const remainingBalanceDisplay = document.getElementById('remainingBalanceDisplay');
+        const remainingPercentageDisplay = document.getElementById('remainingPercentageDisplay');
+        const allExpensesList = document.getElementById('allExpensesList');
+        const searchAllExpenses = document.getElementById('searchAllExpenses');
+        const expensesByCategorySection = document.getElementById('expensesByCategory');
+
+        // Incomes Tab Elements
+        const addIncomeForm = document.getElementById('addIncomeForm');
+        const incomeSourceInput = document.getElementById('incomeSource');
+        const incomeAmountInput = document.getElementById('incomeAmount');
+        const incomeHistoryList = document.getElementById('incomeHistoryList');
+
+        // Expenses Tab Elements
+        const quickAddExpenseForm = document.getElementById('quickAddExpenseForm');
+        const quickExpenseAmountInput = document.getElementById('quickExpenseAmount');
+        const quickExpenseCommentInput = document.getElementById('quickExpenseComment');
+        const quickAddExpenseCategorySelect = document.getElementById('quickAddExpenseCategory');
+        const recentExpensesList = document.getElementById('recentExpensesList');
+
+        // Categories Tab Elements
+        const addCategoryForm = document.getElementById('addCategoryForm');
+        const categoryNameInput = document.getElementById('categoryName');
+        const categoryGoalInput = document.getElementById('categoryGoal');
+        const totalGoalPercentageDisplay = document.getElementById('totalGoalPercentageDisplay');
+        const manageCategoriesList = document.getElementById('manageCategoriesList');
+
+        // Statistics Tab Elements
+        let expensesByCategoryBarChart; // NEW
+        const expensesByCategoryBarChartCanvas = document.getElementById('expensesByCategoryBarChart'); // NEW
+        const expensesByCategoryBarChartEmpty = document.getElementById('expensesByCategoryBarChartEmpty'); // NEW
+        const exportToExcelBtn = document.getElementById('exportToExcelBtn');
+        const exportChartPdfBtn = document.getElementById('exportChartPdfBtn');
+        const categoryJarsContainer = document.getElementById('categoryJarsContainer'); // NEW
+
+        // Reports Tab Elements
+        const reportStartDateInput = document.getElementById('reportStartDate');
+        const reportEndDateInput = document.getElementById('reportEndDate');
+        const generateReportBtn = document.getElementById('generateReportBtn');
+        const exportReportPdfBtn = document.getElementById('exportReportPdfBtn');
+        const generatedReportContent = document.getElementById('generatedReportContent');
+        const getGoalPlanBtn = document.getElementById('getGoalPlanBtn'); // NEW: Goal Planner Button
+
+        // Settings Tab Elements
+        const resetMonthlyBtn = document.getElementById('resetMonthlyBtn');
+        const clearArchivedDataBtn = document.getElementById('clearArchivedDataBtn'); // Renamed from clearAllDataBtn
+        const resetDayOfMonthInput = document.getElementById('resetDayOfMonth');
+        const enableAutoResetCheckbox = document.getElementById('enableAutoReset');
+        const archivedMonthsList = document.getElementById('archivedMonthsList'); // NEW: For displaying archived months
+
+
+
+
+        // Modal & Notification Elements
+        const notepadEditor = document.getElementById('notepadEditor');
+        const notepadBoldBtn = document.getElementById('notepad-bold-btn');
+        const notepadUnderlineBtn = document.getElementById('notepad-underline-btn');
+        const notepadItalicBtn = document.getElementById('notepad-italic-btn'); // NEW: Italic button
+        const notepadIncreaseFontBtn = document.getElementById('notepad-increase-font-btn');
+        const notepadDecreaseFontBtn = document.getElementById('notepad-decrease-font-btn');
+        const notepadClearFormatBtn = document.getElementById('notepad-clear-format-btn');
+        const notepadTextColorPicker = document.getElementById('notepad-text-color-picker');
+        const notepadHighlightColorPicker = document.getElementById('notepad-highlight-color-picker');
+
+        let savedNotepadSelection = null; // NEW: To store selection for color pickers
+
+        const notificationModal = document.getElementById('notificationModal');
+        const closeNotificationModal = document.getElementById('closeNotificationModal');
+        const notificationTitle = document.getElementById('notificationTitle');
+        const notificationMessage = document.getElementById('notificationMessage');
+
+        const confirmationModal = document.getElementById('confirmationModal'); // Dedicated confirmation modal
+        const confirmModalTitle = document.getElementById('confirmModalTitle');
+        const confirmModalMessage = document.getElementById('confirmModalMessage');
+        const confirmModalConfirmBtn = document.getElementById('confirmModalConfirmBtn');
+        const confirmModalCancelBtn = document.getElementById('confirmModalCancelBtn');
+        const closeConfirmationModalBtn = document.getElementById('closeConfirmationModal'); // Close button for confirmation modal
+        let confirmCallback = null; // Callback for confirmation modal
+
+        const geminiTipsModal = document.getElementById('geminiTipsModal');
+        const closeGeminiTipsModal = document.getElementById('closeGeminiTipsModal');
+        const geminiTipsList = document.getElementById('geminiTipsList');
+
+        const savingsTipsModal = document.getElementById('savingsTipsModal'); // New LLM modal
+        const closeSavingsTipsModal = document.getElementById('closeSavingsTipsModal');
+        const savingsTipsList = document.getElementById('savingsTipsList');
+
+        // NEW: Goal Planner Modal Elements
+        const goalPlannerModal = document.getElementById('goalPlannerModal');
+        const closeGoalPlannerModal = document.getElementById('closeGoalPlannerModal');
+        const goalInput = document.getElementById('goalInput');
+        const generateGoalPlanBtn = document.getElementById('generateGoalPlanBtn');
+        const goalPlanOutput = document.getElementById('goalPlanOutput');
+
+        // NEW: Spending Analysis Modal Elements
+        const spendingAnalysisModal = document.getElementById('spendingAnalysisModal');
+        const closeSpendingAnalysisModal = document.getElementById('closeSpendingAnalysisModal');
+        const spendingAnalysisOutput = document.getElementById('spendingAnalysisOutput');
+
+        const notificationBar = document.getElementById('notificationBar');
+
+        // Variables to store filtered report data for PDF export
+        let currentReportFilteredIncomes = [];
+        let currentReportFilteredExpenses = [];
+
+        // --- Dark Mode Functions ---
+        function loadDarkModePreference() {
+            const isDarkMode = localStorage.getItem('darkMode') === 'true';
+            document.body.classList.toggle('dark-mode', isDarkMode);
+            if (isDarkMode) {
+                darkModeToggle.innerHTML = '<i data-feather="sun"></i>';
+            } else {
+                darkModeToggle.innerHTML = '<i data-feather="moon"></i>';
+            }
+            feather.replace(); // Re-render feather icons after changing
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            localStorage.setItem('darkMode', isDarkMode);
+            if (isDarkMode) {
+                darkModeToggle.innerHTML = '<i data-feather="sun"></i>';
+            } else {
+                darkModeToggle.innerHTML = '<i data-feather="moon"></i>';
+            }
+            feather.replace(); // Re-render feather icons after changing
+            updateCharts(); // Re-render charts to apply new theme colors
+        }
+
+        // --- Quote Rotator ---
+        const sidebarQuotes = [
+            "The art is not in making money, but in keeping it.",
+            "Financial goals are the road map that take you to your destination.",
+            "It’s not your salary that makes you rich, it’s your spending habits.",
+            "A penny saved is a penny earned.",
+            "Beware of small expenses; a small leak will sink a great ship.",
+            "Compound interest is the eighth wonder of the world. He who understands it, earns it; he who doesn't, pays it."
+        ];
+        let currentQuoteIndex = 0;
+        function rotateQuote() {
+            currentQuoteIndex = (currentQuoteIndex + 1) % sidebarQuotes.length;
+            quoteRotator.textContent = sidebarQuotes[currentQuoteIndex];
+        }
+
+        // --- Ripple Effect for Buttons ---
+        function addRippleEffect(buttons) {
+            buttons.forEach(button => {
+                button.addEventListener('click', function (e) {
+                    const ripple = document.createElement('span');
+                    ripple.classList.add('ripple');
+
+                    const rect = button.getBoundingClientRect();
+                    const size = Math.max(rect.width, rect.height);
+                    const x = e.clientX - rect.left - (size / 2);
+                    const y = e.clientY - rect.top - (size / 2);
+
+                    ripple.style.width = ripple.style.height = `${size}px`;
+                    ripple.style.left = `${x}px`;
+                    ripple.style.top = `${y}px`;
+
+                    this.appendChild(ripple);
+
+                    ripple.addEventListener('animationend', () => {
+                        ripple.remove();
+                    });
+                });
+            });
+        }
+
+        // --- Automatic Monthly Reset Check ---
+        function checkForAutomaticMonthlyReset() {
+            if (!enableAutoReset) {
+                console.log("Automatic monthly reset is disabled.");
+                return;
+            }
+
+            const today = new Date();
+            const currentDay = today.getDate();
+            const currentMonth = today.getMonth();
+            const currentYear = today.getFullYear();
+
+            // If no last reset date, set it to the current day and return
+            if (!lastResetDate) {
+                lastResetDate = new Date().toISOString().split('T')[0];
+                saveData();
+                console.log("Initial lastResetDate set.");
+                return;
+            }
+
+            const lastReset = new Date(lastResetDate);
+            const lastResetDay = lastReset.getDate();
+            const lastResetMonth = lastReset.getMonth();
+            const lastResetYear = lastReset.getFullYear();
+
+            // Check if it's a new month AND the current day is the reset day or past it,
+            // AND the last reset was NOT in the current month or current year
+            if (currentMonth !== lastResetMonth || currentYear !== lastResetYear) {
+                if (currentDay >= resetDayOfMonth) {
+                    console.log("Performing automatic monthly reset.");
+                    resetMonthlyDataAutomatic(); // Call the automatic reset function
+                } else {
+                    console.log("It's a new month, but not yet the reset day.");
+                }
+            } else {
+                console.log("Still in the same month as last reset.");
+            }
+        }
+
+        // --- Data Persistence Functions ---
+        function saveData() {
+            localStorage.setItem('incomes', JSON.stringify(incomes));
+            localStorage.setItem('expenses', JSON.stringify(expenses));
+            localStorage.setItem('categories', JSON.stringify(categories));
+            localStorage.setItem('lastResetDate', lastResetDate);
+            localStorage.setItem('resetDayOfMonth', resetDayOfMonth);
+            localStorage.setItem('enableAutoReset', enableAutoReset);
+            localStorage.setItem('archivedMonths', JSON.stringify(archivedMonths)); // Save archived data
+        }
+
+        function loadData(importedData = null) {
+            try {
+                // If importedData is provided, use it directly. Otherwise, load from localStorage.
+                const dataToLoad = importedData ? importedData : {
+                    incomes: JSON.parse(localStorage.getItem('incomes')),
+                    expenses: JSON.parse(localStorage.getItem('expenses')),
+                    categories: JSON.parse(localStorage.getItem('categories')),
+                    lastResetDate: localStorage.getItem('lastResetDate'),
+                    resetDayOfMonth: localStorage.getItem('resetDayOfMonth'),
+                    enableAutoReset: localStorage.getItem('enableAutoReset'),
+                    archivedMonths: JSON.parse(localStorage.getItem('archivedMonths'))
+                };
+
+                incomes = dataToLoad.incomes || [];
+                expenses = dataToLoad.expenses || [];
+                categories = dataToLoad.categories || [];
+                lastResetDate = dataToLoad.lastResetDate || null;
+                resetDayOfMonth = parseInt(dataToLoad.resetDayOfMonth) || 1;
+                enableAutoReset = dataToLoad.enableAutoReset !== undefined ? (dataToLoad.enableAutoReset === 'true' || dataToLoad.enableAutoReset === true) : true;
+                archivedMonths = dataToLoad.archivedMonths || {}; // Load archived data
+
+                saveData(); // Ensure loaded data is saved back to localStorage consistently
+            } catch (error) {
+                console.error("Error loading data:", error);
+                // Fallback to default data on error
+                incomes = [];
+                expenses = [];
+                categories = [];
+                lastResetDate = null;
+                resetDayOfMonth = 1;
+                enableAutoReset = true;
+                archivedMonths = {}; // Clear archived data on error too
+                saveData(); // Save the cleared state
+                showNotification('Error loading data. Initializing with defaults.', true);
+            }
+        }
+
+        // --- UI Utility Functions ---
+        function showNotification(message, isError = false) {
+            // Display notification in HTML
+            notificationBar.textContent = message;
+            notificationBar.style.backgroundColor = isError ? 'var(--color-danger)' : 'var(--accent-primary)';
+            notificationBar.classList.add('active');
+
+            // Also send to Android Toast if bridge exists
+            if (window.AndroidBridge && window.AndroidBridge.showAndroidToast) {
+                window.AndroidBridge.showAndroidToast(message);
+            }
+
+            setTimeout(() => {
+                notificationBar.classList.remove('active');
+            }, 3000);
+        }
+
+        function showConfirmationModal(title, message, onConfirm) {
+            confirmModalTitle.textContent = title;
+            confirmModalMessage.innerHTML = message;
+            confirmCallback = onConfirm;
+            confirmationModal.classList.add('active');
+        }
+
+        function closeConfirmationModal() {
+            confirmationModal.classList.remove('active');
+            confirmCallback = null;
+        }
+
+        // Event listeners for the confirmation modal's buttons
+        confirmModalConfirmBtn.addEventListener('click', () => {
+            if (confirmCallback) {
+                confirmCallback();
+            }
+            closeConfirmationModal();
+        });
+
+        confirmModalCancelBtn.addEventListener('click', () => {
+            closeConfirmationModal();
+        });
+
+        closeConfirmationModalBtn.addEventListener('click', () => {
+            closeConfirmationModal();
+        });
+
+        // --- Core Logic Functions ---
+
+        function calculateTotals() {
+            const totalIncome = incomes.reduce((sum, income) => sum + income.amount, 0);
+            renderCategoryJars(); // NEW: Update jars when totals change
+            const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+            const remainingBalance = totalIncome - totalExpenses;
+            const percentage = totalIncome > 0 ? (remainingBalance / totalIncome * 100).toFixed(2) : 0;
+
+            // Animate balance change
+            const currentBalance = parseFloat(remainingBalanceDisplay.textContent.replace('₹', ''));
+            if (currentBalance !== remainingBalance) {
+                if (remainingBalance < currentBalance) {
+                    remainingBalanceDisplay.style.color = 'var(--color-danger)';
+                } else if (remainingBalance > currentBalance) {
+                    remainingBalanceDisplay.style.color = 'var(--accent-primary)';
+                }
+                setTimeout(() => {
+                    remainingBalanceDisplay.style.color = 'var(--text-primary)';
+                }, 500); // Reset color after animation
+            }
+
+            totalIncomeDisplay.textContent = `₹${totalIncome.toFixed(2)}`;
+            totalExpensesDisplay.textContent = `₹${totalExpenses.toFixed(2)}`;
+            remainingBalanceDisplay.textContent = `₹${remainingBalance.toFixed(2)}`;
+            remainingPercentageDisplay.textContent = `(${percentage}%)`;
+
+            // Update chart data
+            updateCharts();
+        }
+
+        function renderAllTabs() {
+            renderIncomeHistory();
+            renderRecentExpenses();
+            renderAllExpenses();
+            renderCategoriesTab();
+            renderExpensesByCategory();
+            renderCategoryJars(); // NEW: Render jars on initial load/tab switch
+            calculateTotals(); // Also updates charts
+            updateCategorySelects();
+            renderManageCategoriesList();
+            resetDayOfMonthInput.value = resetDayOfMonth;
+            enableAutoResetCheckbox.checked = enableAutoReset; // Set checkbox state
+            renderArchivedMonthsList(); // NEW: Render archived months list
+
+        }
+        function loadNotepadContent() {
+            notepadEditor.innerHTML = localStorage.getItem('notepadContent') || '';
+        }
+
+        // NEW: Function to render category spending jars
+        function renderCategoryJars() {
+            categoryJarsContainer.innerHTML = '';
+
+            if (categories.length === 0) {
+                categoryJarsContainer.innerHTML = `<div class="empty-state" style="grid-column: 1 / -1;"><i data-feather="droplet"></i><p>Define categories to see your spending jars.</p></div>`;
+                feather.replace();
+                return;
+            }
+
+            const totalIncome = incomes.reduce((sum, income) => sum + income.amount, 0);
+
+            categories.forEach(category => {
+                const categoryBudget = totalIncome > 0 ? (category.goal / 100) * totalIncome : 0;
+                const spentInCategory = expenses
+                    .filter(exp => exp.category === category.name)
+                    .reduce((sum, exp) => sum + exp.amount, 0);
+
+                let spentPercentage = 0;
+                if (categoryBudget > 0) {
+                    spentPercentage = (spentInCategory / categoryBudget) * 100;
+                } else if (spentInCategory > 0) {
+                    spentPercentage = 200; // If no budget but there are expenses, show as way over
+                }
+
+                const fillHeight = Math.min(spentPercentage, 100);
+                const colorClass = spentPercentage > 100 ? 'jar-fill-over' : 'jar-fill-normal';
+
+                const jarElement = document.createElement('div');
+                jarElement.classList.add('category-jar');
+                jarElement.innerHTML = `
+                    <div class="category-jar-name" title="${category.name}">${category.name}</div>
+                    <div class="jar-visual">
+                        <div class="jar-fill ${colorClass}" style="height: ${fillHeight}%;"></div>
+                    </div>
+                    <div class="jar-percentage">${spentPercentage.toFixed(0)}% of Budget</div>
+                `;
+                categoryJarsContainer.appendChild(jarElement);
+            });
+        }
+
+        // NEW: Notepad selection helper functions
+        function saveNotepadSelection() {
+            if (window.getSelection) {
+                const sel = window.getSelection();
+                if (sel.getRangeAt && sel.rangeCount) {
+                    // Check if the selection is inside our editor before saving
+                    const range = sel.getRangeAt(0);
+                    if (notepadEditor.contains(range.commonAncestorContainer)) {
+                        savedNotepadSelection = range;
+                    } else {
+                        savedNotepadSelection = null;
+                    }
+                }
+            }
+        }
+
+        function restoreNotepadSelection() {
+            if (savedNotepadSelection) {
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(savedNotepadSelection);
+            }
+        }
+
+        function saveNotepadContent() {
+            localStorage.setItem('notepadContent', notepadEditor.innerHTML);
+        }
+
+        function renderNotepadTab() {
+            loadNotepadContent();
+        }
+
+        function switchTab(tabId) {
+            tabContents.forEach(tab => tab.classList.remove('active'));
+            navLinks.forEach(link => link.classList.remove('active'));
+
+            document.getElementById(tabId).classList.add('active');
+            document.querySelector(`.nav-item[data-tab="${tabId}"]`).classList.add('active');
+
+            // Re-render charts when statistics tab is active to ensure they are drawn correctly
+            if (tabId === 'statistics') {
+                updateCharts();
+            }
+             if (tabId === 'notepad') {
+                renderNotepadTab();
+            }
+        }
+
+        // --- Tracker Tab Functions ---
+        function renderAllExpenses() {
+            allExpensesList.innerHTML = '';
+            const searchTerm = searchAllExpenses.value.toLowerCase();
+            const filteredExpenses = expenses.filter(expense =>
+                expense.comment.toLowerCase().includes(searchTerm) ||
+                expense.category.toLowerCase().includes(searchTerm) ||
+                expense.amount.toString().includes(searchTerm)
+            );
+
+            if (filteredExpenses.length === 0) {
+                allExpensesList.innerHTML = `<div class="empty-state"><i data-feather="coffee"></i><p>No transactions recorded yet.</p></div>`;
+                feather.replace();
+                return;
+            }
+
+            filteredExpenses.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            filteredExpenses.forEach(expense => {
+                const listItem = document.createElement('div');
+                listItem.classList.add('list-item');
+                listItem.innerHTML = `
+                    <div class="list-item-content">
+                        <strong>₹${expense.amount.toFixed(2)}</strong> - ${expense.comment}
+                        <div class="meta-text">${expense.category} | ${new Date(expense.date).toLocaleString()}</div>
+                    </div>
+                    <div class="list-item-actions">
+                        <button class="btn-icon edit-btn" aria-label="Edit expense" data-id="${expense.id}" data-type="expense"><i data-feather="edit"></i></button>
+                        <button class="btn-icon delete-btn" aria-label="Delete expense" data-id="${expense.id}" data-type="expense"><i data-feather="trash-2"></i></button>
+                    </div>
+                `;
+                allExpensesList.appendChild(listItem);
+            });
+            feather.replace();
+            addRippleEffect(allExpensesList.querySelectorAll('.btn-icon'));
+        }
+
+        function renderExpensesByCategory() {
+            expensesByCategorySection.innerHTML = '';
+            if (categories.length === 0) {
+                expensesByCategorySection.innerHTML = `<div class="empty-state"><i data-feather="tag"></i><p>Define your blends (categories) first.</p></div>`;
+                feather.replace();
+                return;
+            }
+
+            const expensesGroupedByCategory = {};
+            categories.forEach(cat => expensesGroupedByCategory[cat.name] = { total: 0, items: [] });
+
+            expenses.forEach(expense => {
+                if (expensesGroupedByCategory[expense.category]) {
+                    expensesGroupedByCategory[expense.category].total += expense.amount;
+                    expensesGroupedByCategory[expense.category].items.push(expense);
+                }
+            });
+
+            for (const categoryName in expensesGroupedByCategory) {
+                const categoryData = expensesGroupedByCategory[categoryName];
+                const category = categories.find(cat => cat.name === categoryName);
+                const totalIncome = incomes.reduce((sum, inc) => sum + inc.amount, 0);
+                const percentageOfIncome = totalIncome > 0 ? (categoryData.total / totalIncome * 100).toFixed(2) : 0;
+                const goalPercentage = category ? category.goal : 0;
+                const percentageColor = percentageOfIncome > goalPercentage ? 'var(--color-danger)' : 'var(--accent-primary)';
+
+                const categorySectionDiv = document.createElement('div');
+                categorySectionDiv.classList.add('category-section', 'card');
+                categorySectionDiv.innerHTML = `
+                    <div class="category-header" data-category="${categoryName}">
+                        <div class="category-header-info">
+                            <h3>${categoryName}</h3>
+                            <p class="meta-text">Spent: <strong>₹${categoryData.total.toFixed(2)}}</strong> | Goal: ${goalPercentage}% | Actual: <strong style="color:${percentageColor};">${percentageOfIncome}%</strong></p>
+                        </div>
+                        <i data-feather="chevron-down"></i>
+                    </div>
+                    <div class="category-content">
+                        <ul id="categoryList-${categoryName.replace(/\s/g, '')}"></ul>
+                    </div>
+                `;
+                expensesByCategorySection.appendChild(categorySectionDiv);
+
+                const categoryList = categorySectionDiv.querySelector(`#categoryList-${categoryName.replace(/\s/g, '')}`);
+                if (categoryData.items.length === 0) {
+                    categoryList.innerHTML = `<div class="empty-state" style="border:none; padding:1rem;"><p>No expenses in this category yet.</p></div>`;
+                } else {
+                    categoryData.items.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    categoryData.items.forEach(item => {
+                        const li = document.createElement('li');
+                        li.classList.add('list-item');
+                        li.innerHTML = `
+                            <div class="list-item-content">
+                                <strong>₹${item.amount.toFixed(2)}</strong> - ${item.comment}
+                                <div class="meta-text">${new Date(item.date).toLocaleString()}</div>
+                            </div>
+                            <div class="list-item-actions">
+                                <button class="btn-icon edit-btn" aria-label="Edit expense" data-id="${item.id}" data-type="expense"><i data-feather="edit"></i></button>
+                                <button class="btn-icon delete-btn" aria-label="Delete expense" data-id="${item.id}" data-type="expense"><i data-feather="trash-2"></i></button>
+                            </div>
+                        `;
+                        categoryList.appendChild(li);
+                    });
+                }
+            }
+            feather.replace();
+            addRippleEffect(expensesByCategorySection.querySelectorAll('.btn-icon'));
+
+            // Add event listeners for category headers
+            expensesByCategorySection.querySelectorAll('.category-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const content = header.nextElementSibling;
+                    const icon = header.querySelector('.feather');
+                    header.classList.toggle('expanded');
+                    content.classList.toggle('active');
+                    if (icon.getAttribute('data-feather') === 'chevron-down') {
+                        icon.setAttribute('data-feather', 'chevron-up');
+                    } else {
+                        icon.setAttribute('data-feather', 'chevron-down');
+                    }
+                    feather.replace();
+                });
+            });
+        }
+
+        // --- Incomes Tab Functions ---
+        function addIncome(source, amount) {
+            const newIncome = {
+                id: Date.now(),
+                source,
+                amount: parseFloat(amount),
+                date: new Date().toISOString()
+            };
+            incomes.push(newIncome);
+            saveData();
+            renderIncomeHistory();
+            calculateTotals();
+            showNotification('Income added successfully!');
+        }
+
+        function renderIncomeHistory() {
+            incomeHistoryList.innerHTML = '';
+            if (incomes.length === 0) {
+                incomeHistoryList.innerHTML = `<div class="empty-state"><i data-feather="sun"></i><p>No incomes recorded yet.</p></div>`;
+                feather.replace();
+                return;
+            }
+
+            incomes.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            incomes.forEach(income => {
+                const listItem = document.createElement('div');
+                listItem.classList.add('list-item');
+                listItem.innerHTML = `
+                    <div class="list-item-content">
+                        <strong>₹${income.amount.toFixed(2)}</strong> - ${income.source}
+                        <div class="meta-text">${new Date(income.date).toLocaleString()}</div>
+                    </div>
+                    <div class="list-item-actions">
+                        <button class="btn-icon edit-btn" aria-label="Edit income" data-id="${income.id}" data-type="income"><i data-feather="edit"></i></button>
+                        <button class="btn-icon delete-btn" aria-label="Delete income" data-id="${income.id}" data-type="income"><i data-feather="trash-2"></i></button>
+                    </div>
+                `;
+                incomeHistoryList.appendChild(listItem);
+            });
+            feather.replace();
+            addRippleEffect(incomeHistoryList.querySelectorAll('.btn-icon'));
+        }
+
+        // --- Expenses Tab Functions ---
+        function addExpense(amount, comment, category) {
+            const newExpense = {
+                id: Date.now(),
+                amount: parseFloat(amount),
+                comment,
+                category,
+                date: new Date().toISOString()
+            };
+            expenses.push(newExpense);
+            saveData();
+            renderRecentExpenses();
+            renderAllExpenses();
+            renderExpensesByCategory();
+            calculateTotals();
+            showNotification('Expense added successfully!');
+        }
+
+        function renderRecentExpenses() {
+            recentExpensesList.innerHTML = '';
+            const today = new Date().toISOString().split('T')[0];
+            const recent = expenses.filter(expense => expense.date.startsWith(today));
+
+            if (recent.length === 0) {
+                recentExpensesList.innerHTML = `<div class="empty-state"><i data-feather="coffee"></i><p>No sips recorded today.</p></div>`;
+                feather.replace();
+                return;
+            }
+
+            recent.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            recent.forEach(expense => {
+                const listItem = document.createElement('div');
+                listItem.classList.add('list-item');
+                listItem.innerHTML = `
+                    <div class="list-item-content">
+                        <strong>₹${expense.amount.toFixed(2)}</strong> - ${expense.comment}
+                        <div class="meta-text">${expense.category} | ${new Date(expense.date).toLocaleString()}</div>
+                    </div>
+                    <div class="list-item-actions">
+                        <button class="btn-icon edit-btn" aria-label="Edit expense" data-id="${expense.id}" data-type="expense"><i data-feather="edit"></i></button>
+                        <button class="btn-icon delete-btn" aria-label="Delete expense" data-id="${expense.id}" data-type="expense"><i data-feather="trash-2"></i></button>
+                    </div>
+                `;
+                recentExpensesList.appendChild(listItem);
+            });
+            feather.replace();
+            addRippleEffect(recentExpensesList.querySelectorAll('.btn-icon'));
+        }
+
+        function updateCategorySelects() {
+            quickAddExpenseCategorySelect.innerHTML = '<option value="">Select Category</option>';
+            categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category.name;
+                option.textContent = category.name;
+                quickAddExpenseCategorySelect.appendChild(option);
+            });
+        }
+
+        // --- Categories Tab Functions ---
+        function addCategory(name, goal) {
+            if (categories.some(cat => cat.name.toLowerCase() === name.toLowerCase())) {
+                showNotification('Category with this name already exists!', true);
+                return;
+            }
+            const newCategory = {
+                id: Date.now(),
+                name,
+                goal: parseInt(goal)
+            };
+            categories.push(newCategory);
+            saveData();
+            renderCategoriesTab();
+            updateCategorySelects();
+            showNotification('Category added successfully!');
+        }
+
+        function renderCategoriesTab() {
+            renderManageCategoriesList();
+            updateTotalGoalPercentage();
+            renderExpensesByCategory(); // Re-render this section as well
+        }
+
+        function renderManageCategoriesList() {
+            manageCategoriesList.innerHTML = '';
+            if (categories.length === 0) {
+                manageCategoriesList.innerHTML = `<div class="empty-state"><i data-feather="tag"></i><p>No blends defined yet.</p></div>`;
+                feather.replace();
+                return;
+            }
+
+            categories.forEach(category => {
+                const listItem = document.createElement('div');
+                listItem.classList.add('list-item');
+                listItem.innerHTML = `
+                    <div class="list-item-content">
+                        <strong>${category.name}</strong>
+                        <div class="meta-text">Target: ${category.goal}%</div>
+                    </div>
+                    <div class="list-item-actions">
+                        <button class="btn-icon edit-btn" aria-label="Edit category" data-id="${category.id}" data-type="category"><i data-feather="edit"></i></button>
+                        <button class="btn-icon delete-btn" aria-label="Delete category" data-id="${category.id}" data-type="category"><i data-feather="trash-2"></i></button>
+                    </div>
+                `;
+                manageCategoriesList.appendChild(listItem);
+            });
+            feather.replace();
+            addRippleEffect(manageCategoriesList.querySelectorAll('.btn-icon'));
+        }
+
+        function updateTotalGoalPercentage() {
+            const totalGoal = categories.reduce((sum, cat) => sum + cat.goal, 0);
+            totalGoalPercentageDisplay.textContent = `${totalGoal}%`;
+            totalGoalPercentageDisplay.style.color = totalGoal > 100 ? 'var(--color-danger)' : 'var(--accent-primary)';
+        }
+
+        // --- Statistics Tab Functions ---
+        function updateCharts() {
+            // Destroy existing charts if they exist
+            if (expensesByCategoryBarChart) { // NEW
+                expensesByCategoryBarChart.destroy();
+            }
+
+            const fontFamily = getCssVariable('--font-body');
+            const textColorPrimary = getCssVariable('--text-primary');
+            const textColorSecondary = getCssVariable('--text-secondary');
+            const borderColor = getCssVariable('--border-color');
+            const accentPrimary = getCssVariable('--accent-primary');
+
+            // Expenses by Category Chart
+            const categoryLabels = categories.map(cat => cat.name);
+            const categoryData = categoryLabels.map(label => {
+                return expenses.filter(exp => exp.category === label).reduce((sum, exp) => sum + exp.amount, 0);
+            });
+
+            if (categoryLabels.length === 0 || categoryData.every(d => d === 0)) {
+                expensesByCategoryBarChartCanvas.style.display = 'none'; // NEW
+                expensesByCategoryBarChartEmpty.style.display = 'block'; // NEW
+                exportToExcelBtn.disabled = true;
+                exportChartPdfBtn.disabled = true;
+			} else {
+                expensesByCategoryBarChartCanvas.style.display = 'block'; // NEW
+                expensesByCategoryBarChartEmpty.style.display = 'none'; // NEW
+                exportToExcelBtn.disabled = false;
+                exportChartPdfBtn.disabled = false;
+
+                // NEW: Expenses by Category Bar Chart
+                expensesByCategoryBarChart = new Chart(expensesByCategoryBarChartCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: categoryLabels,
+                        datasets: [{
+                            label: 'Expenses (₹)',
+                            data: categoryData,
+                            backgroundColor: [
+                                'rgba(142, 68, 173, 0.7)',
+                                'rgba(243, 156, 18, 0.7)',
+                                'rgba(46, 204, 113, 0.7)',
+                                'rgba(231, 76, 60, 0.7)',
+                                'rgba(52, 152, 219, 0.7)',
+                                'rgba(155, 89, 182, 0.7)',
+                                'rgba(26, 188, 156, 0.7)',
+                                'rgba(211, 84, 0, 0.7)'
+                            ],
+                            borderColor: [
+                                'rgba(142, 68, 173, 1)',
+                                'rgba(243, 156, 18, 1)',
+                                'rgba(46, 204, 113, 1)',
+                                'rgba(231, 76, 60, 1)',
+                                'rgba(52, 152, 219, 1)',
+                                'rgba(155, 89, 182, 1)',
+                                'rgba(26, 188, 156, 1)',
+                                'rgba(211, 84, 0, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y', // Makes it a horizontal bar chart, which is often better for category names
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                display: false // Hide legend as it's redundant for a single dataset
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                ticks: {
+                                    color: textColorSecondary,
+                                    font: { family: fontFamily }
+                                },
+                                grid: { color: borderColor }
+                            },
+                            y: {
+                                ticks: { color: textColorPrimary, font: { family: fontFamily } },
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+
+        }
+
+        // --- Reports Tab Functions ---
+        function generateReport(startDate, endDate) {
+            generatedReportContent.innerHTML = '';
+
+            const start = startDate ? new Date(startDate) : null;
+            const end = endDate ? new Date(endDate) : null;
+
+            currentReportFilteredIncomes = incomes.filter(income => {
+                const incomeDate = new Date(income.date);
+                return (!start || incomeDate >= start) && (!end || incomeDate <= end);
+            });
+
+            currentReportFilteredExpenses = expenses.filter(expense => {
+                const expenseDate = new Date(expense.date);
+                return (!start || expenseDate >= start) && (!end || expenseDate <= end);
+            });
+
+            if (currentReportFilteredIncomes.length === 0 && currentReportFilteredExpenses.length === 0) {
+                generatedReportContent.innerHTML = `<div class="empty-state"><i data-feather="clipboard"></i><p>No data for the selected period.</p></div>`;
+                exportReportPdfBtn.disabled = true; // Disable PDF export if no data
+                feather.replace();
+                return;
+            }
+
+            exportReportPdfBtn.disabled = false; // Enable PDF export if there is data
+
+            let reportHtml = `
+                <div class="card">
+                    <h3>Income Summary</h3>
+                    <ul class="list-container">
+            `;
+            if (currentReportFilteredIncomes.length === 0) {
+                reportHtml += `<div class="empty-state" style="border:none; padding:1rem;"><p>No incomes in this period.</p></div>`;
+            } else {
+                currentReportFilteredIncomes.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(income => {
+                    reportHtml += `
+                        <li class="list-item">
+                            <div class="list-item-content">
+                                <strong>₹${income.amount.toFixed(2)}</strong> - ${income.source}
+                                <div class="meta-text">${new Date(income.date).toLocaleString()}</div>
+                            </div>
+                        </li>
+                    `;
+                });
+            }
+            reportHtml += `</ul></div>`;
+
+            reportHtml += `
+                <div class="card">
+                    <h3>Expense Summary</h3>
+                    <ul class="list-container">
+            `;
+            if (currentReportFilteredExpenses.length === 0) {
+                reportHtml += `<div class="empty-state" style="border:none; padding:1rem;"><p>No expenses in this period.</p></div>`;
+            } else {
+                currentReportFilteredExpenses.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(expense => {
+                    const expenseDate = new Date(expense.date);
+                    reportHtml += `
+                        <li class="list-item">
+                            <div class="list-item-content">
+                                <strong>₹${expense.amount.toFixed(2)}</strong> - ${expense.comment}
+                                <div class="meta-text">${expense.category} | ${expenseDate.toLocaleString()}</div>
+                            </div>
+                        </li>
+                    `;
+                });
+            }
+            reportHtml += `</ul></div>`;
+
+            const totalIncome = currentReportFilteredIncomes.reduce((sum, income) => sum + income.amount, 0);
+            const totalExpenses = currentReportFilteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+            const balance = totalIncome - totalExpenses;
+
+            reportHtml += `
+                <div class="card financial-overview" style="grid-template-columns: 1fr;">
+                    <div class="overview-card">
+                        <h4>Period Income</h4>
+                        <p class="amount">₹${totalIncome.toFixed(2)}</p>
+                    </div>
+                    <div class="overview-card">
+                        <h4>Period Expenses</h4>
+                        <p class="amount">₹${totalExpenses.toFixed(2)}</p>
+                    </div>
+                    <div class="overview-card">
+                        <h4>Period Balance</h4>
+                        <p class="amount">₹${balance.toFixed(2)}</p>
+                    </div>
+                </div>
+            `;
+
+            generatedReportContent.innerHTML = reportHtml;
+            feather.replace();
+        }
+
+        function exportReportToPdf() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            doc.setFont('helvetica');
+            doc.setFontSize(18);
+            doc.text("Spendlyst Custom Report", 14, 22);
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 28);
+
+            let yPos = 40;
+
+            // Income Table
+            const incomeHeaders = [['Date', 'Source', 'Amount (Rs.)']];
+            const incomeData = currentReportFilteredIncomes.map(income => [
+                new Date(income.date).toLocaleString(),
+                income.source,
+                `Rs. ${income.amount.toFixed(2)}`
+            ]);
+
+            if (incomeData.length > 0) {
+                doc.setFontSize(14);
+                doc.setTextColor(getCssVariable('--text-primary'));
+                doc.text("Income Summary", 14, yPos);
+                yPos += 5;
+                doc.autoTable({
+                    startY: yPos,
+                    head: incomeHeaders,
+                    body: incomeData,
+                    theme: 'striped',
+                    headStyles: { fillColor: [parseInt(getCssVariable('--accent-primary-rgb').split(',')[0]), parseInt(getCssVariable('--accent-primary-rgb').split(',')[1]), parseInt(getCssVariable('--accent-primary-rgb').split(',')[2])] },
+                    styles: { font: 'helvetica', textColor: getCssVariable('--text-primary') },
+                    margin: { top: 10, left: 14, right: 14 },
+                    didDrawPage: function (data) {
+                        yPos = data.cursor.y + 10; // Update yPos for next table
+                    }
+                });
+            } else {
+                doc.setFontSize(12);
+                doc.setTextColor(getCssVariable('--text-secondary'));
+                doc.text("No incomes in this period.", 14, yPos);
+                yPos += 10;
+            }
+
+            // Expense Table
+            const expenseHeaders = [['Date', 'Category', 'Description', 'Amount (Rs.)']];
+            const expenseData = currentReportFilteredExpenses.map(expense => [
+                new Date(expense.date).toLocaleString(),
+                expense.category,
+                expense.comment,
+                `Rs. ${expense.amount.toFixed(2)}`
+            ]);
+
+            if (expenseData.length > 0) {
+                // Add a new page if current content is too long
+                if (yPos + 50 > doc.internal.pageSize.height) { // Estimate space needed for table title + a few rows
+                    doc.addPage();
+                    yPos = 20; // Reset yPos for new page
+                }
+
+                doc.setFontSize(14);
+                doc.setTextColor(getCssVariable('--text-primary'));
+                doc.text("Expense Summary", 14, yPos);
+                yPos += 5;
+                doc.autoTable({
+                    startY: yPos,
+                    head: expenseHeaders,
+                    body: expenseData,
+                    theme: 'striped',
+                    headStyles: { fillColor: [parseInt(getCssVariable('--accent-primary-rgb').split(',')[0]), parseInt(getCssVariable('--accent-primary-rgb').split(',')[1]), parseInt(getCssVariable('--accent-primary-rgb').split(',')[2])] },
+                    styles: { font: 'helvetica', textColor: textColorPrimary },
+                    margin: { top: 10, left: 14, right: 14 },
+                    didDrawPage: function (data) {
+                        yPos = data.cursor.y + 10; // Update yPos for next content
+                    }
+                });
+            } else {
+                // Add a new page if current content is too long
+                if (yPos + 20 > doc.internal.pageSize.height) {
+                    doc.addPage();
+                    yPos = 20;
+                }
+                doc.setFontSize(12);
+                doc.setTextColor(getCssVariable('--text-secondary'));
+                doc.text("No expense details available.", 14, yPos);
+                yPos += 10;
+            }
+
+            // Summary Totals
+            const totalIncome = currentReportFilteredIncomes.reduce((sum, income) => sum + income.amount, 0);
+            const totalExpenses = currentReportFilteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+            const balance = totalIncome - totalExpenses;
+
+            doc.setFontSize(14);
+            doc.setTextColor(getCssVariable('--text-primary'));
+            doc.text("Financial Summary", 14, yPos + 10);
+            doc.setFontSize(12);
+            doc.setTextColor(getCssVariable('--text-secondary'));
+            doc.text(`Total Income: Rs. ${totalIncome.toFixed(2)}`, 14, yPos + 20);
+            doc.text(`Total Expenses: Rs. ${totalExpenses.toFixed(2)}`, 14, yPos + 27);
+            doc.text(`Period Balance: Rs. ${balance.toFixed(2)}`, 14, yPos + 34);
+
+            // Instead of doc.save(), open in new tab
+            const pdfBlob = doc.output('blob');
+            const pdfUrl = URL.createObjectURL(pdfBlob);
+            window.open(pdfUrl, '_blank');
+            // Revoke the object URL after a short delay
+            setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
+            showNotification('Report opened in new tab for download!');
+        }
+
+        // --- Settings Tab Functions ---
+
+
+
+
+        // NEW: Function to archive current month's data
+        function archiveCurrentMonthData() { // Made async to handle file reading
+            return new Promise((resolve, reject) => {
+                const today = new Date();
+                const currentMonthKey = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}`;
+
+                if (incomes.length === 0 && expenses.length === 0) {
+                    resolve(); // Nothing to archive, resolve immediately
+                    return;
+                }
+
+                const currentMonthIncomes = [...incomes];
+                const currentMonthExpenses = [...expenses];
+                const pdfBlob = generateArchivedPdf(currentMonthIncomes, currentMonthExpenses);
+
+                const reader = new FileReader();
+                reader.readAsDataURL(pdfBlob);
+                reader.onloadend = function() {
+                    const base64data = reader.result;
+                    archivedMonths[currentMonthKey] = {
+                        incomes: currentMonthIncomes,
+                        expenses: currentMonthExpenses,
+                        pdfData: base64data.split(',')[1], // Store base64 data instead of a temporary URL
+                        timestamp: new Date().toISOString()
+                    };
+                    resolve(); // Resolve after data is prepared
+                };
+                reader.onerror = (error) => reject(error);
+            });
+        }
+
+        function generateArchivedPdf(incomeData, expenseData) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            const fontFamily = getCssVariable('--font-body');
+            const textColorPrimary = getCssVariable('--text-primary');
+            const textColorSecondary = getCssVariable('--text-secondary');
+            const borderColor = getCssVariable('--border-color');
+            const accentPrimary = getCssVariable('--accent-primary');
+
+
+            doc.setFont('helvetica');
+            doc.setFontSize(18);
+            doc.text("Spendlyst Archived Financial Report", 14, 22); // Changed app name
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 28);
+
+            let yPos = 40;
+
+
+            // Income Table
+            const incomeHeaders = [['Date', 'Source', 'Amount (Rs.)']];
+            const incomeTableData = incomeData.map(income => [
+                new Date(income.date).toLocaleString(),
+                income.source,
+                `Rs. ${income.amount.toFixed(2)}`
+            ]);
+
+            if (incomeTableData.length > 0) {
+                doc.setFontSize(14);
+                doc.setTextColor(textColorPrimary); // Use variable
+                doc.text("Income Summary", 14, yPos);
+                yPos += 5;
+                doc.autoTable({
+                    startY: yPos,
+                    head: incomeHeaders,
+                    body: incomeTableData,
+                    theme: 'striped',
+                    headStyles: { fillColor: [parseInt(getCssVariable('--accent-primary-rgb').split(',')[0]), parseInt(getCssVariable('--accent-primary-rgb').split(',')[1]), parseInt(getCssVariable('--accent-primary-rgb').split(',')[2])] },
+                    styles: { font: 'helvetica', textColor: textColorPrimary },
+                    margin: { top: 10, left: 14, right: 14 },
+                    didDrawPage: function (data) {
+                        yPos = data.cursor.y + 10; // Update yPos for next table
+                    }
+                });
+            } else {
+                doc.setFontSize(12);
+                doc.setTextColor(textColorSecondary);
+                doc.text("No incomes in this period.", 14, yPos);
+                yPos += 10;
+            }
+
+            // Expense Table
+            const expenseHeaders = [['Date', 'Category', 'Description', 'Amount (Rs.)']];
+            const expenseTableData = expenseData.map(expense => [
+                new Date(expense.date).toLocaleString(),
+                expense.category,
+                expense.comment,
+                `Rs. ${expense.amount.toFixed(2)}`
+            ]);
+
+            if (expenseTableData.length > 0) {
+                // Add a new page if current content is too long
+                if (yPos + 50 > doc.internal.pageSize.height) { // Estimate space needed for table title + a few rows
+                    doc.addPage();
+                    yPos = 20; // Reset yPos for new page
+                }
+
+                doc.setFontSize(14);
+                doc.setTextColor(textColorPrimary);
+                doc.text("Expense Summary", 14, yPos);
+                yPos += 5;
+                doc.autoTable({
+                    startY: yPos,
+                    head: expenseHeaders,
+                    body: expenseTableData,
+                    theme: 'striped',
+                    headStyles: { fillColor: [parseInt(getCssVariable('--accent-primary-rgb').split(',')[0]), parseInt(getCssVariable('--accent-primary-rgb').split(',')[1]), parseInt(getCssVariable('--accent-primary-rgb').split(',')[2])] },
+                    styles: { font: 'helvetica', textColor: textColorPrimary },
+                    margin: { top: 10, left: 14, right: 14 },
+                    didDrawPage: function (data) {
+                        yPos = data.cursor.y + 10; // Update yPos for next content
+                    }
+                });
+            } else {
+                // Add a new page if current content is too long
+                if (yPos + 20 > doc.internal.pageSize.height) {
+                    doc.addPage();
+                    yPos = 20;
+                }
+                doc.setFontSize(12);
+                doc.setTextColor(textColorSecondary);
+                doc.text("No expense details available.", 14, yPos);
+                yPos += 10;
+            }
+
+            // NEW: Category Analysis Table
+            const totalIncomeForAnalysis = incomeData.reduce((sum, income) => sum + income.amount, 0);
+            const categoryAnalysisHeaders = [['Category', 'Target %', 'Actual %', 'Status']];
+            const categoryAnalysisData = categories.map(category => {
+                const spentInCategory = expenseData
+                    .filter(exp => exp.category === category.name)
+                    .reduce((sum, exp) => sum + exp.amount, 0);
+
+                const actualPercentage = totalIncomeForAnalysis > 0 ? (spentInCategory / totalIncomeForAnalysis * 100) : 0;
+
+                let status = 'On Track';
+                if (spentInCategory === 0) {
+                    status = 'No Spending';
+                } else if (actualPercentage > category.goal) {
+                    status = 'Over Budget';
+                }
+
+                return [
+                    category.name,
+                    `${category.goal}%`,
+                    `${actualPercentage.toFixed(2)}%`,
+                    status
+                ];
+            });
+
+            if (categoryAnalysisData.length > 0) {
+                if (yPos + 50 > doc.internal.pageSize.height) { doc.addPage(); yPos = 20; }
+                doc.setFontSize(14);
+                doc.setTextColor(textColorPrimary);
+                doc.text("Category Spending Analysis", 14, yPos);
+                yPos += 5;
+                doc.autoTable({
+                    startY: yPos,
+                    head: categoryAnalysisHeaders,
+                    body: categoryAnalysisData,
+                    theme: 'striped',
+                    headStyles: { fillColor: [parseInt(getCssVariable('--accent-primary-rgb').split(',')[0]), parseInt(getCssVariable('--accent-primary-rgb').split(',')[1]), parseInt(getCssVariable('--accent-primary-rgb').split(',')[2])] },
+                    styles: { font: 'helvetica', textColor: textColorPrimary },
+                    margin: { top: 10, left: 14, right: 14 },
+                    didDrawPage: function (data) {
+                        yPos = data.cursor.y + 10;
+                    }
+                });
+            } else {
+                if (yPos + 20 > doc.internal.pageSize.height) { doc.addPage(); yPos = 20; }
+                doc.setFontSize(12);
+                doc.setTextColor(textColorSecondary);
+                doc.text("No category data to analyze.", 14, yPos);
+                yPos += 10;
+            }
+
+            // Add a new page for charts if needed
+            if (yPos + 20 > doc.internal.pageSize.height) {
+                doc.addPage();
+                yPos = 20;
+            }
+
+            doc.setFontSize(14);
+            doc.setTextColor(textColorPrimary);
+            doc.text("Visual Statistics", 14, yPos);
+            yPos += 10;
+
+            let chartsAdded = false;
+            // Add Bar Chart
+            if (expensesByCategoryBarChart && expensesByCategoryBarChartCanvas.style.display !== 'none') {
+                const barChartImg = expensesByCategoryBarChartCanvas.toDataURL('image/png', 1.0);
+                if (yPos + 90 > doc.internal.pageSize.height) { doc.addPage(); yPos = 20; }
+                doc.addImage(barChartImg, 'PNG', 15, yPos, 180, 90);
+                yPos += 95;
+                chartsAdded = true;
+            }
+
+            if (!chartsAdded) {
+                doc.setFontSize(10);
+                doc.setTextColor(textColorSecondary);
+                doc.text(" - No chart data available for this period.", 14, yPos);
+                yPos += 10;
+            }
+
+            // NEW: Add Visual Statistics Data Table
+            const statsHeaders = [['Category', 'Amount Spent (Rs.)']];
+            const statsData = categories.map(cat => {
+                const amountSpent = expenseData
+                    .filter(exp => exp.category === cat.name)
+                    .reduce((sum, exp) => sum + exp.amount, 0);
+                return [cat.name, `Rs. ${amountSpent.toFixed(2)}`];
+            }).filter(row => parseFloat(row[1].replace('Rs. ', '')) > 0); // Only show categories with spending
+
+            if (statsData.length > 0) {
+                if (yPos + 50 > doc.internal.pageSize.height) { doc.addPage(); yPos = 20; }
+                doc.setFontSize(12);
+                doc.setTextColor(textColorPrimary);
+                doc.text("Chart Data Breakdown", 14, yPos);
+                yPos += 5;
+                doc.autoTable({
+                    startY: yPos,
+                    head: statsHeaders,
+                    body: statsData,
+                    theme: 'grid',
+                    headStyles: { fillColor: [149, 165, 166] }, // --accent-secondary color
+                    styles: { font: 'helvetica', textColor: textColorPrimary },
+                    margin: { top: 10, left: 14, right: 14 },
+                    didDrawPage: function (data) { yPos = data.cursor.y + 10; }
+                });
+            }
+
+            // Summary Totals
+            if (yPos + 40 > doc.internal.pageSize.height) { doc.addPage(); yPos = 20; }
+            const totalIncome = incomeData.reduce((sum, income) => sum + income.amount, 0);
+            const totalExpenses = expenseData.reduce((sum, expense) => sum + expense.amount, 0);
+            const balance = totalIncome - totalExpenses;
+
+            doc.setFontSize(14);
+            doc.setTextColor(textColorPrimary);
+            doc.text("Financial Summary", 14, yPos);
+            yPos += 10;
+            doc.setFontSize(12);
+            doc.setTextColor(textColorSecondary);
+            doc.text(`Total Income: Rs. ${totalIncome.toFixed(2)}`, 14, yPos);
+            yPos += 7;
+            doc.text(`Total Expenses: Rs. ${totalExpenses.toFixed(2)}`, 14, yPos);
+            yPos += 7;
+            doc.text(`Period Balance: Rs. ${balance.toFixed(2)}`, 14, yPos);
+
+            // Convert the PDF to a Blob
+            const pdfBlob = doc.output('blob');
+            return pdfBlob
+        }
+
+        async function resetMonthlyData() {
+            showConfirmationModal(
+                'Confirm Monthly Reset',
+                'Are you sure you want to archive the current month\'s data and start fresh? This action cannot be undone for the archived data.',
+                async () => {
+                    try {
+                        await archiveCurrentMonthData(); // Wait for archiving to finish
+                        incomes = []; // Clear current incomes
+                        expenses = []; // Clear current expenses
+                        lastResetDate = new Date().toISOString().split('T')[0];
+                        saveData();
+                        renderAllTabs();
+                        showNotification('Current month\'s data archived and reset successfully!');
+                    } catch (error) {
+                        console.error("Failed to archive data:", error);
+                        showNotification("Error: Could not archive data.", true);
+                    }
+                }
+            );
+        }
+
+        async function resetMonthlyDataAutomatic() {
+            try {
+                await archiveCurrentMonthData(); // Wait for archiving to finish
+                incomes = []; // Clear current incomes
+                expenses = []; // Clear current expenses
+                lastResetDate = new Date().toISOString().split('T')[0];
+                saveData();
+                renderAllTabs();
+                showNotification('Monthly data automatically archived and reset!');
+            } catch (error) {
+                console.error("Failed to auto-archive data:", error);
+                showNotification("Error: Could not automatically archive data.", true);
+            }
+        }
+
+        // NEW: Function to render archived months list
+        function renderArchivedMonthsList() {
+            archivedMonthsList.innerHTML = '';
+
+            const sortedArchivedKeys = Object.keys(archivedMonths).sort((a, b) => {
+                // Sort by year-month descending
+                return b.localeCompare(a);
+            });
+
+            if (sortedArchivedKeys.length === 0) {
+                archivedMonthsList.innerHTML = `<div class="empty-state"><i data-feather="archive"></i><p>No archived data yet.</p></div>`;
+                feather.replace();
+                return;
+            }
+
+            sortedArchivedKeys.forEach(monthKey => {
+                const [year, monthNum] = monthKey.split('-');
+                const monthName = new Date(year, parseInt(monthNum) - 1, 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+                const archivedDataForMonth = archivedMonths[monthKey];
+                const totalArchivedIncomes = archivedDataForMonth.incomes.reduce((sum, i) => sum + i.amount, 0);
+                const totalArchivedExpenses = archivedDataForMonth.expenses.reduce((sum, e) => sum + e.amount, 0);
+                const pdfData = archivedDataForMonth.pdfData;
+                const pdfUrl = pdfData ? URL.createObjectURL(base64ToBlob(pdfData, 'application/pdf')) : '#';
+
+
+                const listItem = document.createElement('div');
+                listItem.classList.add('list-item');
+                listItem.dataset.monthKey = monthKey; // Store month key for deletion
+                listItem.innerHTML = `
+                    <div class="list-item-content">
+                        <strong>${monthName}</strong>
+                        <div class="meta-text">Incomes: Rs. ${totalArchivedIncomes.toFixed(2)} | Expenses: Rs. ${totalArchivedExpenses.toFixed(2)}</div>
+                    </div>
+
+                    <div class="list-item-actions">
+                        <a href="${pdfUrl}" class="btn-icon download-archived-month-btn" download="${monthName}-report.pdf"><i data-feather="download"></i></a>
+                        <button class="btn-icon delete-archived-month-btn" data-month-key="${monthKey}"><i data-feather="trash-2"></i></button>
+                    </div>
+                `;
+                archivedMonthsList.appendChild(listItem);
+
+            });
+            feather.replace();
+            addRippleEffect(archivedMonthsList.querySelectorAll('.btn-icon'));
+        }
+
+        // NEW: Helper function to convert base64 string back to a Blob for PDF download
+        function base64ToBlob(base64, contentType = '', sliceSize = 512) {
+            const byteCharacters = atob(base64);
+            const byteArrays = [];
+
+            for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+                const slice = byteCharacters.slice(offset, offset + sliceSize);
+                const byteNumbers = new Array(slice.length);
+                for (let i = 0; i < slice.length; i++) {
+                    byteNumbers[i] = slice.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                byteArrays.push(byteArray);
+            }
+            return new Blob(byteArrays, { type: contentType });
+        }
+
+        // NEW: Event listener for month-wise archived data deletion
+        document.addEventListener('click', (e) => {
+            const target = e.target.closest('.delete-archived-month-btn');
+            if (target) {
+                const monthKey = target.dataset.monthKey;
+                const listItem = target.closest('.list-item');
+
+                showConfirmationModal(
+                    'Confirm Delete Archived Month',
+                    `Are you sure you want to delete the archived data for <strong>${monthKey}</strong>? This cannot be undone.`,
+                    () => {
+                        if (archivedMonths.hasOwnProperty(monthKey)) {
+                            // Add fade-out animation before removal
+                            if (listItem) {
+                                listItem.classList.add('fade-out');
+                                listItem.addEventListener('animationend', () => {
+                                    delete archivedMonths[monthKey];
+                                    saveData();
+                                    renderArchivedMonthsList(); // Re-render the list after animation
+                                });
+                            } else { // Fallback if no list item found (shouldn't happen)
+                                delete archivedMonths[monthKey];
+                                saveData();
+                                renderArchivedMonthsList();
+                            }
+                            showNotification(`Archived data for ${monthKey} deleted.`);
+                        } else {
+                            showNotification(`No archive found for ${monthKey}.`, true);
+                        }
+                    }
+                );
+            }
+        });
+
+        // Modified clearArchivedDataBtn to only clear the archivedMonths object
+        clearArchivedDataBtn.addEventListener('click', () => {
+            showConfirmationModal(
+                'Confirm Clear ALL Archived Data',
+                'Are you sure you want to clear ALL your historical/archived data? This action cannot be undone.',
+                () => {
+                    archivedMonths = {}; // Clear the entire archive object
+                    saveData();
+                    renderArchivedMonthsList(); // Re-render the list
+                    showNotification('All archived data cleared successfully!', true);
+                }
+            );
+        });
+
+        resetDayOfMonthInput.addEventListener('change', (e) => {
+            resetDayOfMonth = parseInt(e.target.value);
+            saveData();
+            showNotification(`Monthly reset day set to ${resetDayOfMonth}.`);
+        });
+        // New event listener for auto-reset checkbox
+        enableAutoResetCheckbox.addEventListener('change', (e) => {
+            enableAutoReset = e.target.checked;
+            saveData();
+            showNotification(`Automatic monthly reset ${enableAutoReset ? 'enabled' : 'disabled'}.`);
+        });
+
+        // Close modal events for LLM modals
+        closeGeminiTipsModal.addEventListener('click', () => geminiTipsModal.classList.remove('active'));
+        closeSavingsTipsModal.addEventListener('click', () => savingsTipsModal.classList.remove('active'));
+        closeGoalPlannerModal.addEventListener('click', () => goalPlannerModal.classList.remove('active')); // NEW
+        closeSpendingAnalysisModal.addEventListener('click', () => spendingAnalysisModal.classList.remove('active')); // NEW
+
+        window.addEventListener('click', (event) => {
+            if (event.target === geminiTipsModal) {
+                geminiTipsModal.classList.remove('active');
+            }
+            if (event.target === savingsTipsModal) {
+                savingsTipsModal.classList.remove('active');
+            }
+            if (event.target === goalPlannerModal) { // NEW
+                goalPlannerModal.classList.remove('active');
+            }
+            if (event.target === spendingAnalysisModal) { // NEW
+                spendingAnalysisModal.classList.remove('active');
+            }
+            // The confirmation modal now has its own close button, so clicking outside won't close it by default.
+            /*
+            if (event.target === confirmationModal) {
+                closeConfirmationModal();
+            }
+            */
+        });
+        // --- Check for Network Connection ---
+        function isOnline() {
+            return navigator.onLine;
+        }
+
+        // --- Event Listeners ---
+        document.addEventListener('DOMContentLoaded', () => {
+            feather.replace(); // Moved to the top to ensure icons are rendered first
+            loadDarkModePreference();
+            loadData();
+            checkForAutomaticMonthlyReset();
+            switchTab('tracker'); // Default to tracker tab
+            renderAllTabs(); // Initial render of all dynamic content
+
+            // Set up quote rotator
+            setInterval(rotateQuote, 8000); // Rotate every 8 seconds
+
+            // Add ripple effect to all buttons
+            addRippleEffect(document.querySelectorAll('.btn'));
+            // Navigation
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    saveNotepadContent();
+                    e.preventDefault();
+                    const tabId = link.dataset.tab;
+                    switchTab(tabId);
+                });
+            });
+            // Dark Mode Toggle
+            darkModeToggle.addEventListener('click', toggleDarkMode);
+            // Tracker Tab
+            searchAllExpenses.addEventListener('input', renderAllExpenses);
+
+            // Centralized event listener for edit/delete actions using event delegation
+            document.querySelector('.main-content').addEventListener('click', (e) => {
+                const target = e.target.closest('.btn-icon.edit-btn, .btn-icon.delete-btn');
+                if (!target) return;
+
+                const id = parseInt(target.dataset.id);
+                const type = target.dataset.type;
+
+                if (target.classList.contains('delete-btn')) {
+                    // Prevent deleting a category if it's in use
+                    if (type === 'category') {
+                        const categoryToDelete = categories.find(cat => cat.id === id);
+                        if (categoryToDelete && expenses.some(exp => exp.category === categoryToDelete.name)) {
+                            showNotification('Cannot delete category. It is in use by one or more expenses.', true);
+                            return;
+                        }
+                    }
+
+                    showConfirmationModal('Confirm Deletion', 'Are you sure you want to permanently delete this item?', () => {
+                        // Add fade-out animation before deleting
+                        const listItem = target.closest('.list-item');
+                        
+                        const performDelete = () => {
+                            if (type === 'expense') {
+                                expenses = expenses.filter(exp => exp.id !== id);
+                                showNotification('Expense deleted successfully!');
+                            } else if (type === 'income') {
+                                incomes = incomes.filter(inc => inc.id !== id);
+                                showNotification('Income deleted successfully!');
+                            } else if (type === 'category') {
+                                categories = categories.filter(cat => cat.id !== id);
+                                showNotification('Category deleted successfully!');
+                            }
+                            saveData();
+                            renderAllTabs();
+                        };
+
+                        if (listItem) {
+                            listItem.classList.add('fade-out');
+                            listItem.addEventListener('animationend', performDelete, { once: true });
+                        } else {
+                            performDelete();
+                        }
+                    });
+                } else if (target.classList.contains('edit-btn')) {
+                    // Handle edit logic (could open a pre-filled form modal)
+                    let itemToEdit;
+                    let formHtml = ''; 
+                    let updateFunction = () => {}; // Initialize as an empty function
+                    if (type === 'expense') {
+                        itemToEdit = expenses.find(exp => exp.id === id);
+                        if (!itemToEdit) return;
+                        formHtml = `
+                            <div class="form-group">
+                                <label for="editExpenseAmount">Amount (₹)</label>
+                                <input type="number" id="editExpenseAmount" step="0.01" value="${itemToEdit.amount}" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="editExpenseComment">Comment</label>
+                                <input type="text" id="editExpenseComment" value="${itemToEdit.comment}">
+                            </div>
+                            <div class="form-group">
+                                <label for="editExpenseCategory">Category</label>
+                                <select id="editExpenseCategory" required></select>
+                            </div>
+                        `;
+                        updateFunction = () => {
+                            itemToEdit.amount = parseFloat(document.getElementById('editExpenseAmount').value);
+                            itemToEdit.comment = document.getElementById('editExpenseComment').value;
+                            itemToEdit.category = document.getElementById('editExpenseCategory').value;
+                            showNotification('Expense updated successfully!');
+                            return true; // Indicate success
+                        };
+                    } else if (type === 'income') {
+                        itemToEdit = incomes.find(inc => inc.id === id);
+                        if (!itemToEdit) return;
+                        formHtml = `
+                            <div class="form-group">
+                                <label for="editIncomeSource">Source</label>
+                                <input type="text" id="editIncomeSource" value="${itemToEdit.source}" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="editIncomeAmount">Amount (₹)</label>
+                                <input type="number" id="editIncomeAmount" step="0.01" value="${itemToEdit.amount}" required>
+                            </div>
+                        `;
+                        updateFunction = () => {
+                            itemToEdit.source = document.getElementById('editIncomeSource').value;
+                            itemToEdit.amount = parseFloat(document.getElementById('editIncomeAmount').value);
+                            showNotification('Income updated successfully!');
+                            return true; // Indicate success
+                        };
+                    } else if (type === 'category') {
+                        itemToEdit = categories.find(cat => cat.id === id);
+                        if (!itemToEdit) return;
+                        formHtml = `
+                            <div class="form-group">
+                                <label for="editCategoryName">Category Name</label>
+                                <input type="text" id="editCategoryName" value="${itemToEdit.name}" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="editCategoryGoal">Target % of Income</label>
+                                <input type="number" id="editCategoryGoal" min="0" max="100" step="1" value="${itemToEdit.goal}" required>
+                            </div>
+                        `;
+                        updateFunction = () => {
+                            const newName = document.getElementById('editCategoryName').value;
+                            // Prevent changing category name to an existing one (except itself)
+                            if (categories.some(cat => cat.name.toLowerCase() === newName.toLowerCase() && cat.id !== id)) {
+                                showNotification('Category with this name already exists!', true);
+                                return false; // Prevent update
+                            }
+                            // Update category name in expenses if changed
+                            if (itemToEdit.name !== newName) {
+                                expenses.forEach(exp => {
+                                    if (exp.category === itemToEdit.name) {
+                                        exp.category = newName;
+                                    }
+                                });
+                            }
+                            itemToEdit.name = newName;
+                            itemToEdit.goal = parseInt(document.getElementById('editCategoryGoal').value);
+                            showNotification('Category updated successfully!');
+                            return true; // Allow update
+                        };
+                    }
+ 
+                    showConfirmationModal(`Edit ${type.charAt(0).toUpperCase() + type.slice(1)}`, formHtml, () => {
+                        if (updateFunction()) { // Execute update function
+                            saveData();
+                            renderAllTabs();
+                        }
+                    });
+ 
+                    if (type === 'expense') {
+                        const editCategorySelect = document.getElementById('editExpenseCategory');
+                        categories.forEach(category => {
+                            const option = document.createElement('option');
+                            option.value = category.name;
+                            option.textContent = category.name;
+                            editCategorySelect.appendChild(option);
+                        });
+                        editCategorySelect.value = itemToEdit.category;
+                    }
+                }
+            });
+            // Incomes Tab
+            addIncomeForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const source = incomeSourceInput.value.trim();
+                const amount = incomeAmountInput.value;
+                if (source && amount) {
+                    addIncome(source, amount);
+                    addIncomeForm.reset();
+                } else {
+                    showNotification('Please fill in all income fields.', true);
+                }
+            });
+            // Expenses Tab
+            quickAddExpenseForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const amount = quickExpenseAmountInput.value;
+                const comment = quickExpenseCommentInput.value.trim();
+                const category = quickAddExpenseCategorySelect.value;
+
+                if (amount && category) {
+                    addExpense(amount, comment || 'Miscellaneous', category);
+                    quickAddExpenseForm.reset();
+                } else {
+                    showNotification('Please enter amount and select a category.', true);
+                }
+            });
+            // Categories Tab
+            addCategoryForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const name = categoryNameInput.value.trim();
+                const goal = categoryGoalInput.value;
+                if (name && goal) {
+                    addCategory(name, goal);
+                    addCategoryForm.reset();
+                } else {
+                    showNotification('Please fill in all category fields.', true);
+                }
+            });
+
+            // Settings Tab
+            resetMonthlyBtn.addEventListener('click', resetMonthlyData);
+
+            // Statistics Tab
+            exportToExcelBtn.addEventListener('click', () => {
+                // Prepare data for Excel
+                const data = [];
+                data.push(['Type', 'Date', 'Amount', 'Description', 'Category/Source']);
+
+                incomes.forEach(inc => {
+                    data.push(['Income', new Date(inc.date).toLocaleString(), inc.amount.toFixed(2), inc.source, 'N/A']);
+                });
+                expenses.forEach(exp => {
+                    data.push(['Expense', new Date(exp.date).toLocaleString(), exp.amount.toFixed(2), exp.comment, exp.category]);
+                });
+
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Financial Data");
+
+                // Create a Blob and open in new tab
+                const excelBlob = new Blob([XLSX.write(wb, { bookType: 'xlsx', type: 'array' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+                if (window.AndroidBridge && window.AndroidBridge.saveFile) {
+                    blobToBase64(excelBlob).then(base64data => {
+                        const fileName = `Spendlyst-Data-${new Date().toISOString().split('T')[0]}.xlsx`;
+                        window.AndroidBridge.saveFile(base64data, fileName, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                    });
+                } else {
+                    const url = URL.createObjectURL(excelBlob);
+                    window.open(url, '_blank');
+                    setTimeout(() => URL.revokeObjectURL(url), 1000);
+                    showNotification('Data opened in new tab for download!');
+                }
+            });
+            exportChartPdfBtn.addEventListener('click', () => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                // Re-get colors in case of dark mode
+                const textColorPrimary = getCssVariable('--text-primary');
+                const textColorSecondary = getCssVariable('--text-secondary');
+                const accentPrimaryRGB = getCssVariable('--accent-primary-rgb').split(',').map(s => parseInt(s.trim()));
+ 
+                doc.setFont('helvetica');
+                doc.setFontSize(18);
+                doc.text("Spendlyst Financial Statistics Report", 14, 22); // Changed app name
+                doc.setFontSize(10);
+                doc.setTextColor(100);
+                doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 28);
+
+                let yPos = 40;
+
+                // NEW: Add Expenses by Category Bar Chart
+                if (expensesByCategoryBarChart) {
+                    doc.setFontSize(14);
+                    doc.setTextColor(textColorPrimary);
+                    doc.text("Expenses by Category (Bar Chart)", 14, yPos);
+                    yPos += 5;
+                    const barChartImg = expensesByCategoryBarChartCanvas.toDataURL('image/png', 1.0);
+                    doc.addImage(barChartImg, 'PNG', 10, yPos, 180, 100);
+                    yPos += 110;
+                }
+
+                // Add Expenses Details Table
+                const expenseHeaders = [['Date', 'Category', 'Description', 'Amount (Rs.)']];
+                const expenseData = expenses.map(expense => [
+                    new Date(expense.date).toLocaleString(),
+                    expense.category,
+                    expense.comment,
+                    `Rs. ${expense.amount.toFixed(2)}`
+                ]);
+
+                if (expenseData.length > 0) {
+                    // Add a new page if current content is too long
+                    if (yPos + 50 > doc.internal.pageSize.height) { // Estimate space needed for table title + a few rows
+                        doc.addPage();
+                        yPos = 20; // Reset yPos for new page
+                    }
+
+                    doc.setFontSize(14);
+                    doc.setTextColor(textColorPrimary);
+                    doc.text("All Expenses Details", 14, yPos);
+                    yPos += 5;
+                    doc.autoTable({
+                        startY: yPos,
+                        head: expenseHeaders,
+                        body: expenseData,
+                        theme: 'striped',
+                        headStyles: { fillColor: accentPrimaryRGB },
+                        styles: { font: 'helvetica', textColor: textColorPrimary },
+                        margin: { top: 10, left: 14, right: 14 },
+                        didDrawPage: function (data) {
+                            yPos = data.cursor.y + 10; // Update yPos for next content
+                        }
+                    });
+                } else {
+                    // Add a new page if current content is too long
+                    if (yPos + 20 > doc.internal.pageSize.height) {
+                        doc.addPage();
+                        yPos = 20;
+                    }
+                    doc.setFontSize(12);
+                    doc.setTextColor(textColorSecondary);
+                    doc.text("No expense details available.", 14, yPos);
+                }
+
+                // Instead of doc.save(), open in new tab
+                const pdfBlob = doc.output('blob');
+                if (window.AndroidBridge && window.AndroidBridge.saveFile) {
+                    blobToBase64(pdfBlob).then(base64data => {
+                        const fileName = `Spendlyst-Statistics-${new Date().toISOString().split('T')[0]}.pdf`;
+                        window.AndroidBridge.saveFile(base64data, fileName, 'application/pdf');
+                    });
+                } else {
+                    const pdfUrl = URL.createObjectURL(pdfBlob);
+                    window.open(pdfUrl, '_blank');
+                    setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
+                    showNotification('Statistics report opened in new tab for download!');
+                }
+            });
+            // Reports Tab
+            generateReportBtn.addEventListener('click', () => {
+                generateReport(reportStartDateInput.value, reportEndDateInput.value);
+            });
+            exportReportPdfBtn.addEventListener('click', exportReportToPdf);
+            // NEW: Financial Goal Planner Button
+            getGoalPlanBtn.addEventListener('click', () => {
+                goalInput.value = ''; // Clear previous input
+                goalPlanOutput.innerHTML = `<div class="empty-state"><i data-feather="lightbulb"></i><p>Enter your goal above to get a personalized plan.</p></div>`;
+                feather.replace();
+                goalPlannerModal.classList.add('active');
+            });
+            // NEW: Generate Goal Plan button inside the modal
+            generateGoalPlanBtn.addEventListener('click', async () => {
+                const userGoal = goalInput.value.trim();
+                if (!userGoal) {
+                    showNotification('Please describe your financial goal.', true);
+                    return;
+                }
+
+                goalPlanOutput.innerHTML = '<div class="empty-state" style="border:none;"><p>Generating your financial plan...</p></div>';
+                feather.replace();
+
+                if (!isOnline()) {
+                    goalPlanOutput.innerHTML = '<div class="empty-state" style="border:none;"><p>Please connect to the internet to generate a financial plan.</p></div>';
+                    feather.replace();
+                    return;
+                }
+
+                try {
+                    const prompt = `As a financial assistant, provide a concise, actionable financial plan for the following goal: "${userGoal}". The plan should include 3-5 distinct steps, each a single sentence. Conclude with a brief encouraging remark.`;
+                    let chatHistory = [];
+                    chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                    const payload = { contents: chatHistory };
+                    const apiKey = ""; // Canvas will provide this at runtime
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const text = result.candidates[0].content.parts[0].text;
+                        const planSteps = text.split('\n').filter(step => step.trim() !== '');
+                        goalPlanOutput.innerHTML = ''; // Clear loading state
+                        planSteps.forEach(step => {
+                            const li = document.createElement('li');
+                            li.textContent = step.replace(/^- /, ''); // Remove markdown list prefix if present
+                            goalPlanOutput.appendChild(li);
+                        });
+                    } else {
+                        goalPlanOutput.innerHTML = '<div class="empty-state" style="border:none;"><p>Failed to generate plan. Please try again.</p></div>';
+                    }
+                } catch (error) {
+                    console.error('Error fetching Gemini goal plan:', error);
+                    goalPlanOutput.innerHTML = '<div class="empty-state" style="border:none;"><p>Error generating plan. Check your connection.</p></div>';
+                }
+                feather.replace();
+            });
+            notepadEditor.addEventListener('input', () => {
+            saveNotepadContent();
+        });
+
+        // NEW: Save selection on mousedown for color pickers to prevent losing it
+        notepadTextColorPicker.parentElement.addEventListener('mousedown', saveNotepadSelection);
+        notepadHighlightColorPicker.parentElement.addEventListener('mousedown', saveNotepadSelection);
+
+        // Notepad Toolbar Event Listeners
+        notepadBoldBtn.addEventListener('click', () => {
+            document.execCommand('bold', false, null);
+            notepadEditor.focus();
+        });
+        notepadUnderlineBtn.addEventListener('click', () => {
+            document.execCommand('underline', false, null);
+            notepadEditor.focus();
+        });
+        notepadItalicBtn.addEventListener('click', () => {
+            document.execCommand('italic', false, null);
+            notepadEditor.focus();
+        });
+        notepadIncreaseFontBtn.addEventListener('click', () => {
+            // 'increaseFontSize' is deprecated. Using 'fontSize' with values 1-7 is more reliable.
+            const currentSize = document.queryCommandValue('fontSize'); // Returns 1-7 as a string
+            let newSize = parseInt(currentSize || '3') + 1;
+            if (newSize > 7) newSize = 7;
+            document.execCommand('fontSize', false, newSize);
+            notepadEditor.focus();
+        });
+        notepadDecreaseFontBtn.addEventListener('click', () => {
+            // 'decreaseFontSize' is deprecated.
+            const currentSize = document.queryCommandValue('fontSize');
+            let newSize = parseInt(currentSize || '3') - 1;
+            if (newSize < 1) newSize = 1;
+            document.execCommand('fontSize', false, newSize);
+            notepadEditor.focus();
+        });
+        notepadClearFormatBtn.addEventListener('click', () => {
+            showConfirmationModal(
+                'Clear Notepad Content',
+                'Are you sure you want to permanently delete all content from the notepad? This action cannot be undone.',
+                () => {
+                    notepadEditor.innerHTML = '';
+                    saveNotepadContent();
+                    showNotification('Notepad content has been cleared.');
+                    notepadEditor.focus();
+                }
+            );
+        });
+        // FIX: Re-add missing text color listener and fix selection loss
+        notepadTextColorPicker.addEventListener('input', (e) => {
+            notepadEditor.focus();
+            restoreNotepadSelection();
+            document.execCommand('foreColor', false, e.target.value);
+            savedNotepadSelection = null; // Clear selection after use
+        });
+        // FIX: Fix selection loss for highlight color
+        notepadHighlightColorPicker.addEventListener('input', (e) => {
+            notepadEditor.focus();
+            restoreNotepadSelection();
+            // 'hiliteColor' is non-standard, 'backColor' is more widely supported
+            document.execCommand('backColor', false, e.target.value);
+            savedNotepadSelection = null; // Clear selection after use
+        });
+        });
+    </script>
+
+
+
+
+</body>
+</html>
