@@ -2949,7 +2949,7 @@
 
 
         // NEW: Function to archive current month's data
-        function archiveCurrentMonthData() { // Made async to handle file reading
+        function archiveCurrentMonthData(pdfBlob) { // Made async to handle file reading, now accepts a blob
             return new Promise((resolve, reject) => {
                 const today = new Date();
                 const currentMonthKey = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}`;
@@ -2959,17 +2959,13 @@
                     return;
                 }
 
-                const currentMonthIncomes = [...incomes];
-                const currentMonthExpenses = [...expenses];
-                const pdfBlob = generateArchivedPdf(currentMonthIncomes, currentMonthExpenses);
-
                 const reader = new FileReader();
                 reader.readAsDataURL(pdfBlob);
                 reader.onloadend = function() {
                     const base64data = reader.result;
                     archivedMonths[currentMonthKey] = {
-                        incomes: currentMonthIncomes,
-                        expenses: currentMonthExpenses,
+                        incomes: [...incomes],
+                        expenses: [...expenses],
                         pdfData: base64data.split(',')[1], // Store base64 data instead of a temporary URL
                         timestamp: new Date().toISOString()
                     };
@@ -3208,16 +3204,39 @@
         async function resetMonthlyData() {
             showConfirmationModal(
                 'Confirm Monthly Reset',
-                'Are you sure you want to archive the current month\'s data and start fresh? This action cannot be undone for the archived data.',
+                'This will save the current month\'s data as a downloadable PDF, archive it, and then clear all current transactions. Are you sure you want to continue?',
                 async () => {
                     try {
-                        await archiveCurrentMonthData(); // Wait for archiving to finish
-                        incomes = []; // Clear current incomes
-                        expenses = []; // Clear current expenses
+                        if (incomes.length === 0 && expenses.length === 0) {
+                            showNotification('No data to reset.');
+                            return;
+                        }
+
+                        // Step 1: Generate the PDF blob once.
+                        const pdfBlob = generateArchivedPdf(incomes, expenses);
+
+                        // Step 2: Trigger the download using a data URI, which our WebView will catch.
+                        const readerForDownload = new FileReader();
+                        readerForDownload.readAsDataURL(pdfBlob);
+                        readerForDownload.onloadend = function() {
+                            const dataUrl = readerForDownload.result;
+                            const a = document.createElement('a');
+                            a.href = dataUrl;
+                            a.download = `Spendlyst_Archive_${new Date().toISOString().slice(0, 10)}.pdf`;
+                            // This click is what the DownloadListener in MainActivity is waiting for.
+                            a.click();
+                        };
+
+                        // Step 3: Archive the data using the same blob.
+                        await archiveCurrentMonthData(pdfBlob);
+
+                        // Step 4: Clear current data and update UI.
+                        incomes = [];
+                        expenses = [];
                         lastResetDate = new Date().toISOString().split('T')[0];
                         saveData();
                         renderAllTabs();
-                        showNotification('Current month\'s data archived and reset successfully!');
+                        showNotification('Current month\'s data has been archived and reset.');
                     } catch (error) {
                         console.error("Failed to archive data:", error);
                         showNotification("Error: Could not archive data.", true);
@@ -3228,7 +3247,9 @@
 
         async function resetMonthlyDataAutomatic() {
             try {
-                await archiveCurrentMonthData(); // Wait for archiving to finish
+                // Generate blob for archiving
+                const pdfBlob = generateArchivedPdf(incomes, expenses);
+                await archiveCurrentMonthData(pdfBlob); // Pass the blob
                 incomes = []; // Clear current incomes
                 expenses = []; // Clear current expenses
                 lastResetDate = new Date().toISOString().split('T')[0];
