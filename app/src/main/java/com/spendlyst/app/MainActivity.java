@@ -1,9 +1,14 @@
 package com.spendlyst.app;
 
 import android.app.DownloadManager;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.MediaStore;
+import android.util.Log;
 import android.webkit.DownloadListener;
 import android.webkit.MimeTypeMap;
 import android.webkit.URLUtil;
@@ -20,6 +25,7 @@ import com.spendlyst.app.databinding.ActivityMainBinding;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -55,9 +61,10 @@ public class MainActivity extends AppCompatActivity {
                 if (url.startsWith("data:")) {
                     try {
                         saveDataUrlAsFile(url, mimetype);
-                        Toast.makeText(getApplicationContext(), "Saving PDF to Downloads folder...", Toast.LENGTH_LONG).show();
+                        Toast.makeText(getApplicationContext(), "PDF saved to Downloads folder.", Toast.LENGTH_LONG).show();
                     } catch (Exception e) {
-                        Toast.makeText(getApplicationContext(), "Failed to save PDF.", Toast.LENGTH_SHORT).show();
+                        Log.e("DownloadError", "Failed to save data URL file", e);
+                        Toast.makeText(getApplicationContext(), "Failed to save PDF. Please check app permissions.", Toast.LENGTH_LONG).show();
                     }
                 } else {
                     // Handle regular file downloads
@@ -88,28 +95,47 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void saveDataUrlAsFile(String url, String mimeType) throws IOException {
-        String[] parts = url.split(",");
+        final String[] parts = url.split(",");
         if (parts.length < 2) {
             throw new IllegalArgumentException("Invalid data URL.");
         }
 
-        String base64Data = parts[1];
-        byte[] data = Base64.decode(base64Data, Base64.DEFAULT);
+        final byte[] data = Base64.decode(parts[1], Base64.DEFAULT);
+        final String fileExtension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType);
+        final String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        final String fileName = "Spendlyst_Report_" + timeStamp + "." + (fileExtension != null ? fileExtension : "pdf");
 
-        // Create a unique filename
-        String fileExtension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType);
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-        String fileName = "Spendlyst_Report_" + timeStamp + "." + (fileExtension != null ? fileExtension : "pdf");
-
-        File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-        File file = new File(downloadsDir, fileName);
-
-        try (FileOutputStream fos = new FileOutputStream(file)) {
-            fos.write(data);
+        final ContentValues contentValues = new ContentValues();
+        contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
+        contentValues.put(MediaStore.MediaColumns.MIME_TYPE, mimeType);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
+            contentValues.put(MediaStore.MediaColumns.IS_PENDING, 1);
         }
 
-        // Notify the system that a new file is available and show download complete notification
-        DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
-        dm.addCompletedDownload(file.getName(), "Spendlyst Report", true, mimeType, file.getAbsolutePath(), file.length(), true);
+        final ContentResolver resolver = getContentResolver();
+        final Uri collection = MediaStore.Downloads.EXTERNAL_CONTENT_URI;
+        final Uri itemUri = resolver.insert(collection, contentValues);
+
+        if (itemUri == null) {
+            throw new IOException("Failed to create new MediaStore record.");
+        }
+
+        try (final OutputStream os = resolver.openOutputStream(itemUri)) {
+            if (os == null) {
+                throw new IOException("Failed to get output stream.");
+            }
+            os.write(data);
+        } catch (IOException e) {
+            // If something fails, delete the pending entry
+            resolver.delete(itemUri, null, null);
+            throw e;
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            contentValues.clear();
+            contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0); // Mark as complete
+            resolver.update(itemUri, contentValues, null, null);
+        }
     }
 }
