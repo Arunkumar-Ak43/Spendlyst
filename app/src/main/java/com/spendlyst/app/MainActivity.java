@@ -86,6 +86,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onPause() {
+        super.onPause();
+        // When the app is paused (e.g., user switches to another app or closes it),
+        // we explicitly call the JavaScript function to save any pending data.
+        // This is a more robust way to ensure data is saved than relying solely on web events.
+        if (binding != null && binding.webview != null) {
+            binding.webview.evaluateJavascript("if(typeof saveNotepadContent === 'function') { saveNotepadContent(); }", null);
+            Log.d("MainActivity", "onPause: Called saveNotepadContent() in WebView.");
+        }
+    }
+    
+    @Override
     public void onBackPressed() {
         if (binding.webview.canGoBack()) {
             binding.webview.goBack();
