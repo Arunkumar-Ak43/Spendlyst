@@ -2002,6 +2002,7 @@
         const confirmModalConfirmBtn = document.getElementById('confirmModalConfirmBtn');
         const confirmModalCancelBtn = document.getElementById('confirmModalCancelBtn');
         const closeConfirmationModalBtn = document.getElementById('closeConfirmationModal'); // Close button for confirmation modal
+        let debounceTimeout; // For notepad autosave
         let confirmCallback = null; // Callback for confirmation modal
 
         const geminiTipsModal = document.getElementById('geminiTipsModal');
@@ -2343,7 +2344,9 @@
         }
 
         function saveNotepadContent() {
+            // This function is now debounced
             localStorage.setItem('notepadContent', notepadEditor.innerHTML);
+            // console.log("Notepad content saved."); // Optional: for debugging
         }
 
         function renderNotepadTab() {
@@ -3137,7 +3140,7 @@
                     if (yPos + 50 > doc.internal.pageSize.height) { doc.addPage(); yPos = 20; }
                     doc.setFontSize(12);
                     doc.setTextColor(textColorPrimary);
-                doc.text("Spending by Category (Data)", 14, yPos);
+                    doc.text("Spending by Category (Data)", 14, yPos);
                     yPos += 5;
                     doc.autoTable({
                         startY: yPos,
@@ -3214,7 +3217,7 @@
                         expenses = [];
                         lastResetDate = new Date().toISOString().split('T')[0];
                         saveData();
-                        renderAllTabs(); // This will re-render everything with empty data
+                        renderAllTabs();
                         showNotification('Current month\'s data has been archived and reset.');
                     } catch (error) {
                         console.error("Failed to archive data:", error);
@@ -3262,8 +3265,6 @@
                 const archivedDataForMonth = archivedMonths[monthKey];
                 const totalArchivedIncomes = archivedDataForMonth.incomes.reduce((sum, i) => sum + i.amount, 0);
                 const totalArchivedExpenses = archivedDataForMonth.expenses.reduce((sum, e) => sum + e.amount, 0);
-                const pdfData = archivedDataForMonth.pdfData;
-                const pdfUrl = pdfData ? URL.createObjectURL(base64ToBlob(pdfData, 'application/pdf')) : '#';
 
 
                 const listItem = document.createElement('div');
@@ -3276,7 +3277,7 @@
                     </div>
 
                     <div class="list-item-actions">
-                        <a href="${pdfUrl}" class="btn-icon download-archived-month-btn" download="${monthName}-report.pdf"><i data-feather="download"></i></a>
+                        <button class="btn-icon download-archived-month-btn" data-month-key="${monthKey}" aria-label="Download archived report"><i data-feather="download"></i></button>
                         <button class="btn-icon delete-archived-month-btn" data-month-key="${monthKey}"><i data-feather="trash-2"></i></button>
                     </div>
                 `;
@@ -3285,23 +3286,6 @@
             });
             feather.replace();
             addRippleEffect(archivedMonthsList.querySelectorAll('.btn-icon'));
-        }
-
-        // NEW: Helper function to convert base64 string back to a Blob for PDF download
-        function base64ToBlob(base64, contentType = '', sliceSize = 512) {
-            const byteCharacters = atob(base64);
-            const byteArrays = [];
-
-            for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
-                const slice = byteCharacters.slice(offset, offset + sliceSize);
-                const byteNumbers = new Array(slice.length);
-                for (let i = 0; i < slice.length; i++) {
-                    byteNumbers[i] = slice.charCodeAt(i);
-                }
-                const byteArray = new Uint8Array(byteNumbers);
-                byteArrays.push(byteArray);
-            }
-            return new Blob(byteArrays, { type: contentType });
         }
 
         // NEW: Event listener for month-wise archived data deletion
@@ -3337,6 +3321,25 @@
                 );
             }
         });
+
+        // Event listener for downloading archived PDFs
+        document.addEventListener('click', (e) => {
+            const target = e.target.closest('.download-archived-month-btn');
+            if (target) {
+                const monthKey = target.dataset.monthKey;
+                const archivedData = archivedMonths[monthKey];
+                if (archivedData && archivedData.pdfData) {
+                    const dataUrl = `data:application/pdf;base64,${archivedData.pdfData}`;
+                    const a = document.createElement('a');
+                    a.href = dataUrl;
+                    a.download = `Spendlyst_Archive_${monthKey}.pdf`;
+                    a.click();
+                } else {
+                    showNotification('Could not find PDF data for this archive.', true);
+                }
+            }
+        });
+
 
         // Modified clearArchivedDataBtn to only clear the archivedMonths object
         clearArchivedDataBtn.addEventListener('click', () => {
@@ -3411,7 +3414,7 @@
             addRippleEffect(document.querySelectorAll('.btn'));
             // Navigation
             navLinks.forEach(link => {
-                link.addEventListener('click', (e) => {
+                link.addEventListener('mousedown', (e) => { // Use mousedown to save before tab switch logic
                     saveNotepadContent();
                     e.preventDefault();
                     const tabId = link.dataset.tab;
@@ -3794,8 +3797,13 @@
                 feather.replace();
             });
             notepadEditor.addEventListener('input', () => {
-            saveNotepadContent();
-        });
+                // Debounce the save function
+                clearTimeout(debounceTimeout);
+                debounceTimeout = setTimeout(() => {
+                    saveNotepadContent();
+                }, 500); // Save after 500ms of inactivity
+            });
+
 
         // NEW: Save selection on mousedown for color pickers to prevent losing it
         notepadTextColorPicker.parentElement.addEventListener('mousedown', saveNotepadSelection);
