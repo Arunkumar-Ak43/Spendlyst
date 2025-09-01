@@ -3124,34 +3124,6 @@
                     yPos += 10;
                 }
 
-                // Add a new page for charts if needed
-                if (yPos + 20 > doc.internal.pageSize.height) {
-                    doc.addPage();
-                    yPos = 20;
-                }
-
-                doc.setFontSize(14);
-                doc.setTextColor(textColorPrimary);
-                doc.text("Visual Statistics", 14, yPos);
-                yPos += 10;
-
-                let chartsAdded = false;
-                // Add Bar Chart
-                if (expensesByCategoryBarChart && expensesByCategoryBarChartCanvas.style.display !== 'none') {
-                    const barChartImg = expensesByCategoryBarChartCanvas.toDataURL('image/png', 1.0);
-                    if (yPos + 90 > doc.internal.pageSize.height) { doc.addPage(); yPos = 20; }
-                    doc.addImage(barChartImg, 'PNG', 15, yPos, 180, 90);
-                    yPos += 95;
-                    chartsAdded = true;
-                }
-
-                if (!chartsAdded) {
-                    doc.setFontSize(10);
-                    doc.setTextColor(textColorSecondary);
-                    doc.text(" - No chart data available for this period.", 14, yPos);
-                    yPos += 10;
-                }
-
                 // NEW: Add Visual Statistics Data Table
                 const statsHeaders = [['Category', 'Amount Spent (Rs.)']];
                 const statsData = categories.map(cat => {
@@ -3165,7 +3137,7 @@
                     if (yPos + 50 > doc.internal.pageSize.height) { doc.addPage(); yPos = 20; }
                     doc.setFontSize(12);
                     doc.setTextColor(textColorPrimary);
-                    doc.text("Chart Data Breakdown", 14, yPos);
+                doc.text("Spending by Category (Data)", 14, yPos);
                     yPos += 5;
                     doc.autoTable({
                         startY: yPos,
@@ -3217,17 +3189,13 @@
                             return;
                         }
 
-                        // Step 1: Ensure charts are rendered and up-to-date.
-                        // This is crucial because generateArchivedPdf depends on the canvas.
-                        updateCharts();
-
-                        // Step 2: Generate the PDF blob once.
+                        // Step 1: Generate the PDF blob.
                         const pdfBlob = generateArchivedPdf(incomes, expenses);
                         if (!pdfBlob) {
                             throw new Error("PDF Blob generation failed.");
                         }
 
-                        // Step 3: Trigger the download using a data URI, which our WebView will catch.
+                        // Step 2: Trigger the download using a data URI, which our WebView will catch.
                         const readerForDownload = new FileReader();
                         readerForDownload.readAsDataURL(pdfBlob);
                         readerForDownload.onloadend = function() {
@@ -3238,10 +3206,10 @@
                             a.click();
                         };
 
-                        // Step 4: Archive the data using the same blob.
+                        // Step 3: Archive the data using the same blob.
                         await archiveCurrentMonthData(pdfBlob);
 
-                        // Step 5: Clear current data and update UI.
+                        // Step 4: Clear current data and update UI.
                         incomes = [];
                         expenses = [];
                         lastResetDate = new Date().toISOString().split('T')[0];
