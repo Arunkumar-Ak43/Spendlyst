@@ -1795,6 +1795,7 @@
                             <input type="color" id="notepad-highlight-color-picker" value="#f39c12">
                         </label>
                         <button id="notepad-clear-format-btn" class="notepad-tool-btn" title="Clear All Content"><i data-feather="trash-2"></i></button>
+                        <span id="notepad-save-status" style="margin-left: auto; font-size: 0.8rem; color: var(--text-secondary); opacity: 0; transition: opacity 0.5s ease-in-out;"></span>
                     </div>
                     <div id="notepadEditor" contenteditable="true"></div>
                 </div>
@@ -2272,6 +2273,7 @@
             resetDayOfMonthInput.value = resetDayOfMonth;
             enableAutoResetCheckbox.checked = enableAutoReset; // Set checkbox state
             renderArchivedMonthsList(); // NEW: Render archived months list
+            loadNotepadContent(); // Load notepad content on initial render
 
         }
         function loadNotepadContent() {
@@ -2346,7 +2348,14 @@
         function saveNotepadContent() {
             // This function is now debounced
             localStorage.setItem('notepadContent', notepadEditor.innerHTML);
-            // console.log("Notepad content saved."); // Optional: for debugging
+            const notepadSaveStatus = document.getElementById('notepad-save-status');
+            if (notepadSaveStatus) {
+                notepadSaveStatus.textContent = 'Saved!';
+                // The opacity is already 1 from the input event
+                setTimeout(() => {
+                    notepadSaveStatus.style.opacity = '0';
+                }, 1500); // Fade out after 1.5 seconds
+            }
         }
 
         function renderNotepadTab() {
@@ -3797,6 +3806,11 @@
                 feather.replace();
             });
             notepadEditor.addEventListener('input', () => {
+                const notepadSaveStatus = document.getElementById('notepad-save-status');
+                if (notepadSaveStatus) {
+                    notepadSaveStatus.textContent = 'Saving...';
+                    notepadSaveStatus.style.opacity = '1';
+                }
                 // Debounce the save function
                 clearTimeout(debounceTimeout);
                 debounceTimeout = setTimeout(() => {
