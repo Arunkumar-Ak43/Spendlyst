@@ -964,6 +964,31 @@
             transform: scaleY(1.1);
         }
 
+        /* 9. Notepad: Feather Pen Writing */
+        .logo-notepad svg {
+            width: 100%;
+            height: 100%;
+        }
+        .logo-notepad .feather-body {
+            fill: var(--accent-highlight);
+            stroke: var(--bg-surface);
+            stroke-width: 1;
+        }
+        .logo-notepad .quill-tip {
+            fill: var(--text-primary);
+        }
+        .logo-notepad .scribble {
+            fill: none;
+            stroke: var(--accent-primary);
+            stroke-width: 1.5;
+            stroke-dasharray: 50;
+            stroke-dashoffset: 50;
+            animation: scribble 2s ease-out forwards;
+        }
+        @keyframes scribble {
+            to { stroke-dashoffset: 0; }
+        }
+
         /* Modal & Notification */
         .modal {
             display: none;
@@ -1421,9 +1446,6 @@
             <!-- About tab removed from main nav and moved to settings -->
         </nav>
 
-        
-
-
         <main class="main-content">
             <div class="quote-rotator" id="quoteRotator">
                 Every rupee saved is a step toward freedom.
@@ -1670,52 +1692,6 @@
                 </div>
             </section>
 
-            <section id="reports" class="tab-content">
-                <h2>
-                    <span class="animated-tab-logo logo-reports">
-                        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                            <rect x="6" y="4" width="20" height="24" rx="2" fill="var(--bg-surface)"
-                                stroke="var(--accent-primary)" stroke-width="1.5" class="paper-body" />
-                            <path d="M6 8h20M6 12h10M6 16h14M6 20h8" stroke="var(--border-color)" stroke-width="0.7"
-                                class="lines" />
-                            <path d="M26 4L22 8L26 12L26 4Z" fill="var(--bg-main)" stroke="var(--accent-primary)"
-                                stroke-width="0.7" class="fold" />
-                        </svg>
-                    </span>
-                    Reports
-                </h2>
-                <div class="card">
-                    <h3>Generate Custom Reports</h3>
-                    <div class="form-group">
-                        <label for="reportStartDate">Start Date</label>
-                        <input type="date" id="reportStartDate" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label for="reportEndDate">End Date</label>
-                        <input type="date" id="reportEndDate" class="form-control">
-                    </div>
-                    <div style="display:flex; gap:0.5rem; margin-bottom: 1rem;">
-                        <button id="generateReportBtn" class="btn btn-primary flex-grow"><i data-feather="file-text"></i>
-                            Generate Report</button>
-                        <button id="exportReportPdfBtn" class="btn btn-secondary flex-grow" disabled><i
-                                data-feather="file"></i> Export Report to PDF</button>
-                    </div>
-                </div>
-                <div class="card" style="text-align: center;">
-                    <button id="getGoalPlanBtn" class="btn btn-primary" style="margin-top:1rem;">
-                        <i data-feather="target"></i> Financial Goal Planner ✨
-                    </button>
-                </div>
-                <div class="card">
-                    <h3>Generated Report</h3>
-                    <div id="generatedReportContent">
-                        <div class="empty-state"><i data-feather="clipboard"></i>
-                            <p>No report generated yet.</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
             <section id="settings" class="tab-content">
                 <h2>
                     <span class="animated-tab-logo logo-settings">
@@ -1734,7 +1710,13 @@
                 <div class="card">
                     <h3>Data Management</h3>
                     <div class="form-group">
-                        <button id="resetMonthlyBtn" class="btn btn-danger btn-block"><i data-feather="refresh-cw"></i>
+                        <button id="resetMonthlyBtn" class="btn btn-danger btn-block">
+                            <span class="btn-icon-wrapper">
+                                <i data-feather="refresh-cw"></i>
+                            </span>
+                            <span class="btn-spinner" style="display: none;">
+                                <i data-feather="loader" class="spinner-anim"></i>
+                            </span>
                             Reset Current Month Data</button>
                     </div>
                     <div class="form-group">
@@ -1768,14 +1750,19 @@
                     <h3>About Spendlyst</h3>
                     <p><strong>Spendlyst</strong> is your personal financial harmony tracker, designed to help you effortlessly manage your incomes and expenses. Keep track of where your money goes, set spending goals, and gain valuable insights into your financial health.</p>
                     <p>This application aims to provide a simple, intuitive, and powerful tool for everyday financial management, empowering you to make smarter financial decisions.</p>
-                    <p><strong>Developer:</strong> Arun</p>
-                    <p><strong>Email:</strong> <a href="mailto:contact.arunofficial43@gmail.com" target="_blank">contact.arunofficial43@gmail.com</a></p>
-                    <p><strong>Github:</strong> <a href="https://github.com/Arunkumar-Ak43/Main" target="_blank">github.com/Arunkumar</a></p>
+                    <p><strong>Developer:</strong> Bits team</p>
+                    <p><strong>Email:</strong> <a href="mailto:contact.Spendlyst143@gmail.com" target="_blank">contact.arunofficial43@gmail.com</a></p>
+                    <p><strong>Github:</strong> <a href="https://github.com/Arunkumar-Ak43" target="_blank">github.com/Arunkumar-Ak43</a></p>
                 </div>
             </section>
              <section id="notepad" class="tab-content">
                 <h2>
-                    <span class="animated-tab-logo logo-tracker">
+                    <span class="animated-tab-logo logo-notepad">
+                        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                            <path class="feather-body" d="M25,3 L29,7 L12,24 L8,24 L8,20 L25,3 Z" />
+                            <path class="quill-tip" d="M6,22 L8,24 L4,28 L2,26 L6,22 Z" />
+                            <path class="scribble" d="M10,18 C14,14 20,16 24,12" />
+                        </svg>
                     </span>
                     Notepad
                 </h2>
@@ -1844,23 +1831,6 @@
             <h3>Savings Strategies ✨</h3>
             <ul id="savingsTipsList">
                 </ul>
-        </div>
-    </div>
-
-    <div id="goalPlannerModal" class="modal">
-        <div class="modal-content">
-            <span class="close-button" id="closeGoalPlannerModal">&times;</span>
-            <h3>Financial Goal Planner ✨</h3>
-            <div class="form-group">
-                <label for="goalInput">Describe your financial goal:</label>
-                <textarea id="goalInput" rows="4" placeholder="e.g., Save ₹5,00,000 for a house down payment in 5 years, Pay off ₹1,00,000 credit card debt in 2 years."></textarea>
-            </div>
-            <button id="generateGoalPlanBtn" class="btn btn-primary btn-block"><i data-feather="zap"></i> Generate Plan</button>
-            <div id="goalPlanOutput" class="list-container" style="margin-top:1.5rem;">
-                <div class="empty-state"><i data-feather="lightbulb"></i>
-                    <p>Enter your goal above to get a personalized plan.</p>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -1961,14 +1931,6 @@
         const exportChartPdfBtn = document.getElementById('exportChartPdfBtn');
         const categoryJarsContainer = document.getElementById('categoryJarsContainer'); // NEW
 
-        // Reports Tab Elements
-        const reportStartDateInput = document.getElementById('reportStartDate');
-        const reportEndDateInput = document.getElementById('reportEndDate');
-        const generateReportBtn = document.getElementById('generateReportBtn');
-        const exportReportPdfBtn = document.getElementById('exportReportPdfBtn');
-        const generatedReportContent = document.getElementById('generatedReportContent');
-        const getGoalPlanBtn = document.getElementById('getGoalPlanBtn'); // NEW: Goal Planner Button
-
         // Settings Tab Elements
         const resetMonthlyBtn = document.getElementById('resetMonthlyBtn');
         const clearArchivedDataBtn = document.getElementById('clearArchivedDataBtn'); // Renamed from clearAllDataBtn
@@ -2014,23 +1976,8 @@
         const closeSavingsTipsModal = document.getElementById('closeSavingsTipsModal');
         const savingsTipsList = document.getElementById('savingsTipsList');
 
-        // NEW: Goal Planner Modal Elements
-        const goalPlannerModal = document.getElementById('goalPlannerModal');
-        const closeGoalPlannerModal = document.getElementById('closeGoalPlannerModal');
-        const goalInput = document.getElementById('goalInput');
-        const generateGoalPlanBtn = document.getElementById('generateGoalPlanBtn');
-        const goalPlanOutput = document.getElementById('goalPlanOutput');
-
-        // NEW: Spending Analysis Modal Elements
-        const spendingAnalysisModal = document.getElementById('spendingAnalysisModal');
-        const closeSpendingAnalysisModal = document.getElementById('closeSpendingAnalysisModal');
-        const spendingAnalysisOutput = document.getElementById('spendingAnalysisOutput');
 
         const notificationBar = document.getElementById('notificationBar');
-
-        // Variables to store filtered report data for PDF export
-        let currentReportFilteredIncomes = [];
-        let currentReportFilteredExpenses = [];
 
         // --- Dark Mode Functions ---
         function loadDarkModePreference() {
@@ -2206,6 +2153,31 @@
             confirmModalMessage.innerHTML = message;
             confirmCallback = onConfirm;
             confirmationModal.classList.add('active');
+            trapFocus(confirmationModal);
+        }
+
+        // NEW: Function to trap focus within a modal for accessibility
+        function trapFocus(modal) {
+            const focusableElements = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+            const firstFocusableElement = focusableElements[0];
+            const lastFocusableElement = focusableElements[focusableElements.length - 1];
+
+            modal.addEventListener('keydown', function(e) {
+                const isTabPressed = e.key === 'Tab' || e.keyCode === 9;
+                if (!isTabPressed) return;
+
+                if (e.shiftKey) { // if shift + tab is pressed
+                    if (document.activeElement === firstFocusableElement) {
+                        lastFocusableElement.focus();
+                        e.preventDefault();
+                    }
+                } else { // if tab is pressed
+                    if (document.activeElement === lastFocusableElement) {
+                        firstFocusableElement.focus();
+                        e.preventDefault();
+                    }
+                }
+            });
         }
 
         function closeConfirmationModal() {
@@ -2378,6 +2350,20 @@
             }
         }
 
+        // Helper function to manage button spinner state
+        function setButtonLoading(button, isLoading) {
+            const iconWrapper = button.querySelector('.btn-icon-wrapper');
+            const spinner = button.querySelector('.btn-spinner');
+            if (isLoading) {
+                button.disabled = true;
+                if (iconWrapper) iconWrapper.style.display = 'none';
+                if (spinner) spinner.style.display = 'inline-flex';
+            } else {
+                button.disabled = false;
+                if (iconWrapper) iconWrapper.style.display = 'inline-flex';
+                if (spinner) spinner.style.display = 'none';
+            }
+        }
         // --- Tracker Tab Functions ---
         function renderAllExpenses() {
             allExpensesList.innerHTML = '';
@@ -2749,212 +2735,6 @@
 
         }
 
-        // --- Reports Tab Functions ---
-        function generateReport(startDate, endDate) {
-            generatedReportContent.innerHTML = '';
-
-            const start = startDate ? new Date(startDate) : null;
-            const end = endDate ? new Date(endDate) : null;
-
-            currentReportFilteredIncomes = incomes.filter(income => {
-                const incomeDate = new Date(income.date);
-                return (!start || incomeDate >= start) && (!end || incomeDate <= end);
-            });
-
-            currentReportFilteredExpenses = expenses.filter(expense => {
-                const expenseDate = new Date(expense.date);
-                return (!start || expenseDate >= start) && (!end || expenseDate <= end);
-            });
-
-            if (currentReportFilteredIncomes.length === 0 && currentReportFilteredExpenses.length === 0) {
-                generatedReportContent.innerHTML = `<div class="empty-state"><i data-feather="clipboard"></i><p>No data for the selected period.</p></div>`;
-                exportReportPdfBtn.disabled = true; // Disable PDF export if no data
-                feather.replace();
-                return;
-            }
-
-            exportReportPdfBtn.disabled = false; // Enable PDF export if there is data
-
-            let reportHtml = `
-                <div class="card">
-                    <h3>Income Summary</h3>
-                    <ul class="list-container">
-            `;
-            if (currentReportFilteredIncomes.length === 0) {
-                reportHtml += `<div class="empty-state" style="border:none; padding:1rem;"><p>No incomes in this period.</p></div>`;
-            } else {
-                currentReportFilteredIncomes.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(income => {
-                    reportHtml += `
-                        <li class="list-item">
-                            <div class="list-item-content">
-                                <strong>₹${income.amount.toFixed(2)}</strong> - ${income.source}
-                                <div class="meta-text">${new Date(income.date).toLocaleString()}</div>
-                            </div>
-                        </li>
-                    `;
-                });
-            }
-            reportHtml += `</ul></div>`;
-
-            reportHtml += `
-                <div class="card">
-                    <h3>Expense Summary</h3>
-                    <ul class="list-container">
-            `;
-            if (currentReportFilteredExpenses.length === 0) {
-                reportHtml += `<div class="empty-state" style="border:none; padding:1rem;"><p>No expenses in this period.</p></div>`;
-            } else {
-                currentReportFilteredExpenses.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(expense => {
-                    const expenseDate = new Date(expense.date);
-                    reportHtml += `
-                        <li class="list-item">
-                            <div class="list-item-content">
-                                <strong>₹${expense.amount.toFixed(2)}</strong> - ${expense.comment}
-                                <div class="meta-text">${expense.category} | ${expenseDate.toLocaleString()}</div>
-                            </div>
-                        </li>
-                    `;
-                });
-            }
-            reportHtml += `</ul></div>`;
-
-            const totalIncome = currentReportFilteredIncomes.reduce((sum, income) => sum + income.amount, 0);
-            const totalExpenses = currentReportFilteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-            const balance = totalIncome - totalExpenses;
-
-            reportHtml += `
-                <div class="card financial-overview" style="grid-template-columns: 1fr;">
-                    <div class="overview-card">
-                        <h4>Period Income</h4>
-                        <p class="amount">₹${totalIncome.toFixed(2)}</p>
-                    </div>
-                    <div class="overview-card">
-                        <h4>Period Expenses</h4>
-                        <p class="amount">₹${totalExpenses.toFixed(2)}</p>
-                    </div>
-                    <div class="overview-card">
-                        <h4>Period Balance</h4>
-                        <p class="amount">₹${balance.toFixed(2)}</p>
-                    </div>
-                </div>
-            `;
-
-            generatedReportContent.innerHTML = reportHtml;
-            feather.replace();
-        }
-
-        function exportReportToPdf() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-
-            doc.setFont('helvetica');
-            doc.setFontSize(18);
-            doc.text("Spendlyst Custom Report", 14, 22);
-            doc.setFontSize(10);
-            doc.setTextColor(100);
-            doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 28);
-
-            let yPos = 40;
-
-            // Income Table
-            const incomeHeaders = [['Date', 'Source', 'Amount (Rs.)']];
-            const incomeData = currentReportFilteredIncomes.map(income => [
-                new Date(income.date).toLocaleString(),
-                income.source,
-                `Rs. ${income.amount.toFixed(2)}`
-            ]);
-
-            if (incomeData.length > 0) {
-                doc.setFontSize(14);
-                doc.setTextColor(getCssVariable('--text-primary'));
-                doc.text("Income Summary", 14, yPos);
-                yPos += 5;
-                doc.autoTable({
-                    startY: yPos,
-                    head: incomeHeaders,
-                    body: incomeData,
-                    theme: 'striped',
-                    headStyles: { fillColor: [parseInt(getCssVariable('--accent-primary-rgb').split(',')[0]), parseInt(getCssVariable('--accent-primary-rgb').split(',')[1]), parseInt(getCssVariable('--accent-primary-rgb').split(',')[2])] },
-                    styles: { font: 'helvetica', textColor: getCssVariable('--text-primary') },
-                    margin: { top: 10, left: 14, right: 14 },
-                    didDrawPage: function (data) {
-                        yPos = data.cursor.y + 10; // Update yPos for next table
-                    }
-                });
-            } else {
-                doc.setFontSize(12);
-                doc.setTextColor(getCssVariable('--text-secondary'));
-                doc.text("No incomes in this period.", 14, yPos);
-                yPos += 10;
-            }
-
-            // Expense Table
-            const expenseHeaders = [['Date', 'Category', 'Description', 'Amount (Rs.)']];
-            const expenseData = currentReportFilteredExpenses.map(expense => [
-                new Date(expense.date).toLocaleString(),
-                expense.category,
-                expense.comment,
-                `Rs. ${expense.amount.toFixed(2)}`
-            ]);
-
-            if (expenseData.length > 0) {
-                // Add a new page if current content is too long
-                if (yPos + 50 > doc.internal.pageSize.height) { // Estimate space needed for table title + a few rows
-                    doc.addPage();
-                    yPos = 20; // Reset yPos for new page
-                }
-
-                doc.setFontSize(14);
-                doc.setTextColor(getCssVariable('--text-primary'));
-                doc.text("Expense Summary", 14, yPos);
-                yPos += 5;
-                doc.autoTable({
-                    startY: yPos,
-                    head: expenseHeaders,
-                    body: expenseData,
-                    theme: 'striped',
-                    headStyles: { fillColor: [parseInt(getCssVariable('--accent-primary-rgb').split(',')[0]), parseInt(getCssVariable('--accent-primary-rgb').split(',')[1]), parseInt(getCssVariable('--accent-primary-rgb').split(',')[2])] },
-                    styles: { font: 'helvetica', textColor: textColorPrimary },
-                    margin: { top: 10, left: 14, right: 14 },
-                    didDrawPage: function (data) {
-                        yPos = data.cursor.y + 10; // Update yPos for next content
-                    }
-                });
-            } else {
-                // Add a new page if current content is too long
-                if (yPos + 20 > doc.internal.pageSize.height) {
-                    doc.addPage();
-                    yPos = 20;
-                }
-                doc.setFontSize(12);
-                doc.setTextColor(getCssVariable('--text-secondary'));
-                doc.text("No expense details available.", 14, yPos);
-                yPos += 10;
-            }
-
-            // Summary Totals
-            const totalIncome = currentReportFilteredIncomes.reduce((sum, income) => sum + income.amount, 0);
-            const totalExpenses = currentReportFilteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-            const balance = totalIncome - totalExpenses;
-
-            doc.setFontSize(14);
-            doc.setTextColor(getCssVariable('--text-primary'));
-            doc.text("Financial Summary", 14, yPos + 10);
-            doc.setFontSize(12);
-            doc.setTextColor(getCssVariable('--text-secondary'));
-            doc.text(`Total Income: Rs. ${totalIncome.toFixed(2)}`, 14, yPos + 20);
-            doc.text(`Total Expenses: Rs. ${totalExpenses.toFixed(2)}`, 14, yPos + 27);
-            doc.text(`Period Balance: Rs. ${balance.toFixed(2)}`, 14, yPos + 34);
-
-            // Instead of doc.save(), open in new tab
-            const pdfBlob = doc.output('blob');
-            const pdfUrl = URL.createObjectURL(pdfBlob);
-            window.open(pdfUrl, '_blank');
-            // Revoke the object URL after a short delay
-            setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
-            showNotification('Report opened in new tab for download!');
-        }
-
         // --- Settings Tab Functions ---
 
 
@@ -3001,7 +2781,7 @@
 
                 doc.setFont('helvetica');
                 doc.setFontSize(18);
-                doc.text("Spendlyst Archived Financial Report", 14, 22); // Changed app name
+                doc.text("Spendlyst Archived Financial Report", 14, 22);
                 doc.setFontSize(10);
                 doc.setTextColor(100);
                 doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 28);
@@ -3196,6 +2976,7 @@
                 'This will save the current month\'s data as a downloadable PDF, archive it, and then clear all current transactions. Are you sure you want to continue?',
                 async () => {
                     try {
+                        setButtonLoading(resetMonthlyBtn, true); // Start loading
                         if (incomes.length === 0 && expenses.length === 0) {
                             showNotification('No data to reset.');
                             return;
@@ -3207,17 +2988,21 @@
                             throw new Error("PDF Blob generation failed.");
                         }
 
-                        // Step 2: Trigger the download using a data URI, which our WebView will catch.
-                        const readerForDownload = new FileReader();
-                        readerForDownload.readAsDataURL(pdfBlob);
-                        readerForDownload.onloadend = function() {
-                            const dataUrl = readerForDownload.result;
+                        // Step 2: Trigger the download. Use AndroidBridge if available, otherwise use web download.
+                        const fileName = `Spendlyst_Archive_${new Date().toISOString().slice(0, 10)}.pdf`;
+                        if (window.AndroidBridge && window.AndroidBridge.saveFile) {
+                            const base64data = await blobToBase64(pdfBlob);
+                            window.AndroidBridge.saveFile(base64data, fileName, 'application/pdf');
+                        } else {
+                            const url = URL.createObjectURL(pdfBlob);
                             const a = document.createElement('a');
-                            a.href = dataUrl;
-                            a.download = `Spendlyst_Archive_${new Date().toISOString().slice(0, 10)}.pdf`;
+                            a.href = url;
+                            a.download = fileName;
+                            document.body.appendChild(a);
                             a.click();
-                        };
-
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                        }
                         // Step 3: Archive the data using the same blob.
                         await archiveCurrentMonthData(pdfBlob);
 
@@ -3231,6 +3016,8 @@
                     } catch (error) {
                         console.error("Failed to archive data:", error);
                         showNotification("Error: Could not archive data.", true);
+                    } finally {
+                        setButtonLoading(resetMonthlyBtn, false); // Stop loading
                     }
                 }
             );
@@ -3378,9 +3165,7 @@
 
         // Close modal events for LLM modals
         closeGeminiTipsModal.addEventListener('click', () => geminiTipsModal.classList.remove('active'));
-        closeSavingsTipsModal.addEventListener('click', () => savingsTipsModal.classList.remove('active'));
-        closeGoalPlannerModal.addEventListener('click', () => goalPlannerModal.classList.remove('active')); // NEW
-        closeSpendingAnalysisModal.addEventListener('click', () => spendingAnalysisModal.classList.remove('active')); // NEW
+        closeSavingsTipsModal.addEventListener('click', () => savingsTipsModal.classList.remove('active'));        
 
         window.addEventListener('click', (event) => {
             if (event.target === geminiTipsModal) {
@@ -3389,23 +3174,8 @@
             if (event.target === savingsTipsModal) {
                 savingsTipsModal.classList.remove('active');
             }
-            if (event.target === goalPlannerModal) { // NEW
-                goalPlannerModal.classList.remove('active');
-            }
-            if (event.target === spendingAnalysisModal) { // NEW
-                spendingAnalysisModal.classList.remove('active');
-            }
-            // The confirmation modal now has its own close button, so clicking outside won't close it by default.
-            /*
-            if (event.target === confirmationModal) {
-                closeConfirmationModal();
-            }
-            */
+            
         });
-        // --- Check for Network Connection ---
-        function isOnline() {
-            return navigator.onLine;
-        }
 
         // --- Event Listeners ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -3421,6 +3191,7 @@
 
             // Add ripple effect to all buttons
             addRippleEffect(document.querySelectorAll('.btn'));
+            addRippleEffect(document.querySelectorAll('.nav-item')); // Add ripple to nav items too
             // Navigation
             navLinks.forEach(link => {
                 link.addEventListener('mousedown', (e) => { // Use mousedown to save before tab switch logic
@@ -3447,12 +3218,19 @@
                     // Prevent deleting a category if it's in use
                     if (type === 'category') {
                         const categoryToDelete = categories.find(cat => cat.id === id);
-                        if (categoryToDelete && expenses.some(exp => exp.category === categoryToDelete.name)) {
-                            showNotification('Cannot delete category. It is in use by one or more expenses.', true);
-                            return;
+                        if (categoryToDelete) {
+                            // Instead of blocking, re-assign expenses to a default category
+                            expenses.forEach(exp => {
+                                if (exp.category === categoryToDelete.name) {
+                                    exp.category = 'Uncategorized'; // Re-assign to a default
+                                }
+                            });
+                            // Ensure 'Uncategorized' exists if it doesn't
+                            if (!categories.some(c => c.name === 'Uncategorized')) {
+                                categories.push({ id: Date.now(), name: 'Uncategorized', goal: 0 });
+                            }
                         }
                     }
-
                     showConfirmationModal('Confirm Deletion', 'Are you sure you want to permanently delete this item?', () => {
                         // Add fade-out animation before deleting
                         const listItem = target.closest('.list-item');
@@ -3741,70 +3519,6 @@
                     showNotification('Statistics report opened in new tab for download!');
                 }
             });
-            // Reports Tab
-            generateReportBtn.addEventListener('click', () => {
-                generateReport(reportStartDateInput.value, reportEndDateInput.value);
-            });
-            exportReportPdfBtn.addEventListener('click', exportReportToPdf);
-            // NEW: Financial Goal Planner Button
-            getGoalPlanBtn.addEventListener('click', () => {
-                goalInput.value = ''; // Clear previous input
-                goalPlanOutput.innerHTML = `<div class="empty-state"><i data-feather="lightbulb"></i><p>Enter your goal above to get a personalized plan.</p></div>`;
-                feather.replace();
-                goalPlannerModal.classList.add('active');
-            });
-            // NEW: Generate Goal Plan button inside the modal
-            generateGoalPlanBtn.addEventListener('click', async () => {
-                const userGoal = goalInput.value.trim();
-                if (!userGoal) {
-                    showNotification('Please describe your financial goal.', true);
-                    return;
-                }
-
-                goalPlanOutput.innerHTML = '<div class="empty-state" style="border:none;"><p>Generating your financial plan...</p></div>';
-                feather.replace();
-
-                if (!isOnline()) {
-                    goalPlanOutput.innerHTML = '<div class="empty-state" style="border:none;"><p>Please connect to the internet to generate a financial plan.</p></div>';
-                    feather.replace();
-                    return;
-                }
-
-                try {
-                    const prompt = `As a financial assistant, provide a concise, actionable financial plan for the following goal: "${userGoal}". The plan should include 3-5 distinct steps, each a single sentence. Conclude with a brief encouraging remark.`;
-                    let chatHistory = [];
-                    chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-                    const payload = { contents: chatHistory };
-                    const apiKey = ""; // Canvas will provide this at runtime
-                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    const result = await response.json();
-
-                    if (result.candidates && result.candidates.length > 0 &&
-                        result.candidates[0].content && result.candidates[0].content.parts &&
-                        result.candidates[0].content.parts.length > 0) {
-                        const text = result.candidates[0].content.parts[0].text;
-                        const planSteps = text.split('\n').filter(step => step.trim() !== '');
-                        goalPlanOutput.innerHTML = ''; // Clear loading state
-                        planSteps.forEach(step => {
-                            const li = document.createElement('li');
-                            li.textContent = step.replace(/^- /, ''); // Remove markdown list prefix if present
-                            goalPlanOutput.appendChild(li);
-                        });
-                    } else {
-                        goalPlanOutput.innerHTML = '<div class="empty-state" style="border:none;"><p>Failed to generate plan. Please try again.</p></div>';
-                    }
-                } catch (error) {
-                    console.error('Error fetching Gemini goal plan:', error);
-                    goalPlanOutput.innerHTML = '<div class="empty-state" style="border:none;"><p>Error generating plan. Check your connection.</p></div>';
-                }
-                feather.replace();
-            });
             notepadEditor.addEventListener('input', () => {
                 const notepadSaveStatus = document.getElementById('notepad-save-status');
                 if (notepadSaveStatus) {
@@ -3873,14 +3587,14 @@
                 }
             );
         });
-        // FIX: Re-add missing text color listener and fix selection loss
+        // FIX: Re-add missing text color listener and fix selection loss by restoring selection
         notepadTextColorPicker.addEventListener('input', (e) => {
             notepadEditor.focus();
             restoreNotepadSelection();
             document.execCommand('foreColor', false, e.target.value);
             savedNotepadSelection = null; // Clear selection after use
         });
-        // FIX: Fix selection loss for highlight color
+        // FIX: Fix selection loss for highlight color by restoring selection
         notepadHighlightColorPicker.addEventListener('input', (e) => {
             notepadEditor.focus();
             restoreNotepadSelection();
