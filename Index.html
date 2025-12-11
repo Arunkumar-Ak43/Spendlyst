@@ -1272,6 +1272,24 @@
             transform: scale(1.05);
         }
 
+        /* NEW: Archive Edit Banner Styles */
+        .archive-edit-banner {
+            background-color: var(--accent-highlight);
+            color: var(--bg-surface);
+            padding: 0.5rem 1rem;
+            text-align: center;
+            font-weight: 600;
+            display: none; /* Hidden by default */
+            position: sticky;
+            top: 58px; /* Position below the main header */
+            z-index: 999;
+            animation: headerSlideIn 0.5s ease-out;
+        }
+
+        .archive-edit-banner.active {
+            display: block;
+        }
+
         /* NEW: Style for active/toggled notepad buttons */
         .notepad-tool-btn.active {
             background-color: var(--accent-highlight);
@@ -1368,6 +1386,10 @@
             .main-content {
                 padding-bottom: 1rem;
                 /* Reset padding for desktop */
+            }
+
+            .archive-edit-banner {
+                top: 64px; /* Adjust for larger header on desktop */
             }
         }
     </style>
@@ -1702,6 +1724,10 @@
                 </div>
                 <div class="card">
                     <h3>Archived Months</h3>
+                    <button id="addNewArchiveMonthBtn" class="btn btn-secondary btn-sm" style="margin-bottom: 1rem;">
+                        <i data-feather="plus"></i> Add New Month
+                    </button>
+
                     <div id="archivedMonthsList" class="list-container">
                         <div class="empty-state"><i data-feather="archive"></i>
                             <p>No archived data yet.</p>
@@ -1865,8 +1891,10 @@
         let resetDayOfMonth = parseInt(localStorage.getItem('resetDayOfMonth')) || 1;
         let enableAutoReset = localStorage.getItem('enableAutoReset') === 'true'; // New preference
 
+        let currentlyEditingArchiveKey = null; // NEW: To track if we are editing an archive
         // NEW: Store archived data as an object where keys are "YYYY-MM"
         let archivedMonths = JSON.parse(localStorage.getItem('archivedMonths')) || {};
+        let stagedCurrentData = JSON.parse(localStorage.getItem('stagedCurrentData')) || null; // NEW: For saving current work
 
         // DOM Elements
         const navLinks = document.querySelectorAll('.nav-item');
@@ -1917,6 +1945,7 @@
         const resetDayOfMonthInput = document.getElementById('resetDayOfMonth');
         const enableAutoResetCheckbox = document.getElementById('enableAutoReset');
         const archivedMonthsList = document.getElementById('archivedMonthsList'); // NEW: For displaying archived months
+        const addNewArchiveMonthBtn = document.getElementById('addNewArchiveMonthBtn'); // NEW: Add new month button
 
 
 
@@ -1962,6 +1991,11 @@
         // NEW: Spending Analysis Modal Elements
         const spendingAnalysisModal = document.getElementById('spendingAnalysisModal');
         const closeSpendingAnalysisModal = document.getElementById('closeSpendingAnalysisModal');
+
+        // NEW: Archive Edit Mode Elements
+        let archiveEditBanner, archiveEditBannerText, discardArchiveChangesBtn; // Will be created dynamically
+
+
         const spendingAnalysisOutput = document.getElementById('spendingAnalysisOutput');
 
         const notificationBar = document.getElementById('notificationBar');
@@ -2211,7 +2245,9 @@
             resetDayOfMonthInput.value = resetDayOfMonth;
             enableAutoResetCheckbox.checked = enableAutoReset; // Set checkbox state
             renderArchivedMonthsList(); // NEW: Render archived months list
+            updateResetButtonState(); // NEW: Update reset button text
             loadNotepadContent(); // Load notepad content on initial render
+            updateArchiveEditBanner(); // NEW: Show/hide the edit banner
 
         }
         function loadNotepadContent() {
@@ -2281,6 +2317,18 @@
             notepadBoldBtn.classList.toggle('active', document.queryCommandState('bold'));
             notepadUnderlineBtn.classList.toggle('active', document.queryCommandState('underline'));
             notepadItalicBtn.classList.toggle('active', document.queryCommandState('italic'));
+        }
+
+        // NEW: Function to show or hide the archive edit banner
+        function updateArchiveEditBanner() {
+            if (currentlyEditingArchiveKey) {
+                const [year, monthNum] = currentlyEditingArchiveKey.split('-');
+                const monthName = new Date(year, parseInt(monthNum) - 1, 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+                archiveEditBannerText.innerHTML = `<strong>Editing Archive:</strong> ${monthName}`;
+                archiveEditBanner.classList.add('active');
+            } else {
+                archiveEditBanner.classList.remove('active');
+            }
         }
 
         function switchTab(tabId) {
@@ -2882,21 +2930,28 @@
 
 
         // NEW: Function to archive current month's data
-        function archiveCurrentMonthData(pdfBlob) { // Made async to handle file reading, now accepts a blob
-            return new Promise((resolve, reject) => {
-                const today = new Date();
-                const currentMonthKey = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}`;
+        function archiveCurrentMonthData(pdfBlob, monthKey) { // Made async to handle file reading, now accepts a blob and the key
+            return new Promise(async (resolve, reject) => {
+                const archiveKey = monthKey || `${new Date().getFullYear()}-${(new Date().getMonth() + 1).toString().padStart(2, '0')}`;
 
-                if (incomes.length === 0 && expenses.length === 0) {
+                // If we are creating a new archive and there's no data, do nothing.
+                // If we are updating an archive, we allow it to be cleared (all transactions deleted).
+                if (!monthKey && incomes.length === 0 && expenses.length === 0) {
+                    showNotification('No data to archive.');
+                    // We resolve here because it's not an error, just nothing to do.
+                    // The calling function should handle this case.
                     resolve(); // Nothing to archive, resolve immediately
                     return;
                 }
-
+                if (!pdfBlob) {
+                    resolve(); // If no PDF, just save the data without it.
+                    return;
+                }
                 const reader = new FileReader();
                 reader.readAsDataURL(pdfBlob);
                 reader.onloadend = function() {
-                    const base64data = reader.result;
-                    archivedMonths[currentMonthKey] = {
+                    const base64data = reader.result; // This is a data URL
+                    archivedMonths[archiveKey] = {
                         incomes: [...incomes],
                         expenses: [...expenses],
                         pdfData: base64data.split(',')[1], // Store base64 data instead of a temporary URL
@@ -3112,43 +3167,68 @@
         }
 
         async function resetMonthlyData() {
+            // Determine if we are updating an existing archive or creating a new one
+            const isUpdating = !!currentlyEditingArchiveKey;
+            const title = isUpdating ? 'Save Changes to Archive' : 'Confirm Monthly Reset';
+            const message = isUpdating ?
+                `This will save your changes to the <strong>${currentlyEditingArchiveKey}</strong> archive and return you to your live data. Continue?` :
+                'This will save the current month\'s data as a downloadable PDF, archive it, and then clear all current transactions. Are you sure you want to continue?';
+
             showConfirmationModal(
-                'Confirm Monthly Reset',
-                'This will save the current month\'s data as a downloadable PDF, archive it, and then clear all current transactions. Are you sure you want to continue?',
+                title,
+                message,
                 async () => {
                     try {
-                        if (incomes.length === 0 && expenses.length === 0) {
-                            showNotification('No data to reset.');
+                        // If creating a new archive and there's no data, stop.
+                        if (!isUpdating && incomes.length === 0 && expenses.length === 0) {
+                            showNotification('No data to archive or reset.');
                             return;
                         }
 
                         // Step 1: Generate the PDF blob.
                         const pdfBlob = generateArchivedPdf(incomes, expenses);
                         if (!pdfBlob) {
-                            throw new Error("PDF Blob generation failed.");
+                            throw new Error("PDF generation failed.");
                         }
 
-                        // Step 2: Trigger the download using a data URI, which our WebView will catch.
-                        const readerForDownload = new FileReader();
-                        readerForDownload.readAsDataURL(pdfBlob);
-                        readerForDownload.onloadend = function() {
-                            const dataUrl = readerForDownload.result;
-                            const a = document.createElement('a');
-                            a.href = dataUrl;
-                            a.download = `Spendlyst_Archive_${new Date().toISOString().slice(0, 10)}.pdf`;
-                            a.click();
-                        };
+                        // Step 2: Archive the data using the same blob. This will either create a new archive
+                        // or overwrite the existing one, based on `currentlyEditingArchiveKey`.
+                        await archiveCurrentMonthData(pdfBlob, currentlyEditingArchiveKey);
 
-                        // Step 3: Archive the data using the same blob.
-                        await archiveCurrentMonthData(pdfBlob);
+                        // Step 3: If we were NOT updating an existing archive, trigger the download.
+                        if (!isUpdating) {
+                            const readerForDownload = new FileReader();
+                            readerForDownload.readAsDataURL(pdfBlob);
+                            readerForDownload.onloadend = function() {
+                                const dataUrl = readerForDownload.result;
+                                const a = document.createElement('a');
+                                a.href = dataUrl;
+                                a.download = `Spendlyst_Archive_${new Date().toISOString().slice(0, 10)}.pdf`;
+                                a.click();
+                            };
+                        }
 
-                        // Step 4: Clear current data and update UI.
-                        incomes = [];
-                        expenses = [];
-                        lastResetDate = new Date().toISOString().split('T')[0];
+                        // Step 4: Restore live data if we were editing, otherwise clear the workspace.
+                        if (isUpdating && stagedCurrentData) {
+                            incomes = stagedCurrentData.incomes;
+                            expenses = stagedCurrentData.expenses;
+                            stagedCurrentData = null;
+                            localStorage.removeItem('stagedCurrentData');
+                        } else {
+                            incomes = [];
+                            expenses = [];
+                            lastResetDate = new Date().toISOString().split('T')[0];
+                        }
+
+                        currentlyEditingArchiveKey = null; // Reset the editing key
                         saveData();
                         renderAllTabs();
-                        showNotification('Current month\'s data has been archived and reset.');
+
+                        const successMessage = isUpdating ?
+                            'Archive updated. Restored your live data.' :
+                            'Current month\'s data has been archived and reset.';
+                        showNotification(successMessage);
+
                     } catch (error) {
                         console.error("Failed to archive data:", error);
                         showNotification("Error: Could not archive data.", true);
@@ -3157,10 +3237,23 @@
             );
         }
 
+        // NEW: Function to update the reset button text based on editing state
+        function updateResetButtonState() {
+            if (currentlyEditingArchiveKey) {
+                resetMonthlyBtn.innerHTML = `<i data-feather="save"></i> Save & Return to Live Data`;
+                discardArchiveChangesBtn.style.display = 'block'; // Show the discard button
+                resetMonthlyBtn.classList.remove('btn-danger'); // Make it look like a primary action
+            } else {
+                resetMonthlyBtn.innerHTML = `<i data-feather="refresh-cw"></i> Reset Current Month Data`;
+                discardArchiveChangesBtn.style.display = 'none'; // Hide the discard button
+                resetMonthlyBtn.classList.add('btn-danger'); // Make it look like a danger action
+            }
+            feather.replace();
+        }
         async function resetMonthlyDataAutomatic() {
             try {
                 // Generate blob for archiving
-                const pdfBlob = generateArchivedPdf(incomes, expenses);
+                const pdfBlob = (incomes.length > 0 || expenses.length > 0) ? generateArchivedPdf(incomes, expenses) : null;
                 await archiveCurrentMonthData(pdfBlob); // Pass the blob
                 incomes = []; // Clear current incomes
                 expenses = []; // Clear current expenses
@@ -3207,6 +3300,7 @@
                     </div>
 
                     <div class="list-item-actions">
+                        <button class="btn-icon load-archived-month-btn" data-month-key="${monthKey}" aria-label="Load and edit this archive"><i data-feather="copy"></i></button>
                         <button class="btn-icon download-archived-month-btn" data-month-key="${monthKey}" aria-label="Download archived report"><i data-feather="download"></i></button>
                         <button class="btn-icon delete-archived-month-btn" data-month-key="${monthKey}"><i data-feather="trash-2"></i></button>
                     </div>
@@ -3217,6 +3311,74 @@
             feather.replace();
             addRippleEffect(archivedMonthsList.querySelectorAll('.btn-icon'));
         }
+
+        // NEW: Event listener for loading an archived month for editing
+        document.addEventListener('click', (e) => {
+            const target = e.target.closest('.load-archived-month-btn');
+            if (target) {
+                const monthKey = target.dataset.monthKey;
+                showConfirmationModal(
+                    'Edit Archived Data?',
+                    `This will temporarily save your current work and load the data from <strong>${monthKey}</strong> for editing. Continue?`,
+                    () => {
+                        const dataToLoad = archivedMonths[monthKey];
+                        if (dataToLoad) {
+                            // If not already editing, save current data to the staging area
+                            if (!currentlyEditingArchiveKey) {
+                                stagedCurrentData = { incomes: [...incomes], expenses: [...expenses] };
+                                localStorage.setItem('stagedCurrentData', JSON.stringify(stagedCurrentData));
+                            }
+
+                            // Create copies to avoid modifying the archive directly
+                            incomes = JSON.parse(JSON.stringify(dataToLoad.incomes));
+                            expenses = JSON.parse(JSON.stringify(dataToLoad.expenses));
+                            
+                            currentlyEditingArchiveKey = monthKey; // Set the key to indicate we're in edit mode
+                            
+                            // We don't call saveData() here because we don't want to overwrite the main
+                            // 'incomes'/'expenses' in localStorage yet. We are in a temporary edit state.
+                            // saveData() will be called when the user explicitly saves or resets.
+
+                            renderAllTabs(); // Refresh the entire UI
+                            switchTab('tracker'); // Go to the tracker tab to see the loaded data
+                            showNotification(`Data for ${monthKey} loaded for editing.`);
+                        } else {
+                            showNotification('Could not find data for this archive.', true);
+                        }
+                    }
+                );
+            }
+        });
+
+        // NEW: Event listener for discarding changes to an archive and returning to live data
+        document.addEventListener('click', (e) => {
+            const target = e.target.closest('#discardArchiveChangesBtn');
+            if (target) {
+                if (!currentlyEditingArchiveKey) return;
+
+                showConfirmationModal(
+                    'Discard Changes?',
+                    `Are you sure you want to discard all changes to the <strong>${currentlyEditingArchiveKey}</strong> archive and return to your live data?`,
+                    () => {
+                        if (stagedCurrentData) {
+                            incomes = stagedCurrentData.incomes;
+                            expenses = stagedCurrentData.expenses;
+                            stagedCurrentData = null;
+                            localStorage.removeItem('stagedCurrentData');
+                        }
+                        currentlyEditingArchiveKey = null;
+                        saveData(); // Save the restored live data
+                        renderAllTabs();
+                        showNotification('Changes discarded. Restored your live data.');
+                        if (document.querySelector('.nav-item[data-tab="settings"]').classList.contains('active')) {
+                            // Do nothing, stay on settings tab
+                        } else {
+                            switchTab('tracker');
+                        }
+                    }
+                );
+            }
+        });
 
         // NEW: Event listener for month-wise archived data deletion
         document.addEventListener('click', (e) => {
@@ -3324,12 +3486,56 @@
             */
         });
         // --- Check for Network Connection ---
+
         function isOnline() {
             return navigator.onLine;
         }
 
+        /**
+         * Converts an ISO date string to a format suitable for a datetime-local input.
+         * @param {string} isoDate - The date string in ISO format.
+         * @returns {string} The date string formatted as YYYY-MM-DDTHH:mm.
+         */
+        function toLocalISOString(isoDate) {
+            const date = new Date(isoDate);
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
         // --- Event Listeners ---
         document.addEventListener('DOMContentLoaded', () => {
+            // --- DYNAMIC ELEMENT CREATION ---
+            // This section runs once the DOM is ready, ensuring elements are created and appended correctly.
+
+            // Create and inject the Archive Edit Mode Banner
+            const bannerEl = document.createElement('div');
+            bannerEl.id = 'archiveEditBanner';
+            bannerEl.className = 'archive-edit-banner';
+            bannerEl.innerHTML = `<span id="archiveEditBannerText"></span>`;
+            document.querySelector('.app-header').insertAdjacentElement('afterend', bannerEl);
+            
+            // Assign to the globally scoped variables
+            archiveEditBanner = document.getElementById('archiveEditBanner');
+            archiveEditBannerText = document.getElementById('archiveEditBannerText');
+
+            // Create and inject the "Discard Changes" button into the Settings tab
+            const discardBtnEl = document.createElement('button');
+            discardBtnEl.id = 'discardArchiveChangesBtn';
+            discardBtnEl.className = 'btn btn-secondary btn-block';
+            discardBtnEl.style.display = 'none'; // Initially hidden
+            discardBtnEl.innerHTML = `<i data-feather="x-circle"></i> Discard Changes & Return`;
+
+            const dataManagementCard = document.getElementById('resetMonthlyBtn').closest('.card');
+            const formGroup = document.getElementById('resetMonthlyBtn').parentElement;
+            const newFormGroup = document.createElement('div');
+            newFormGroup.className = 'form-group';
+            newFormGroup.appendChild(discardBtnEl);
+            dataManagementCard.insertBefore(newFormGroup, formGroup.nextSibling);
+            discardArchiveChangesBtn = document.getElementById('discardArchiveChangesBtn'); // Assign the new button
+
             feather.replace(); // Moved to the top to ensure icons are rendered first
             loadDarkModePreference();
             loadData();
@@ -3342,6 +3548,79 @@
 
             // Add ripple effect to all buttons
             addRippleEffect(document.querySelectorAll('.btn'));
+
+            // --- EVENT LISTENER SETUP ---
+            // NEW: Event listener for adding a new archived month
+            addNewArchiveMonthBtn.addEventListener('click', () => {
+                showConfirmationModal(
+                    'Add New Archived Month',
+                    `
+                    <div class="form-group">
+                        <label for="newArchiveYear">Year (YYYY)</label>
+                        <input type="number" id="newArchiveYear" min="2000" max="2100" value="${new Date().getFullYear()}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newArchiveMonth">Month (1-12)</label>
+                        <input type="number" id="newArchiveMonth" min="1" max="12" value="${new Date().getMonth() + 1}" required>
+                    </div>
+                    `,
+                    () => {
+                        const yearInput = document.getElementById('newArchiveYear');
+                        const monthInput = document.getElementById('newArchiveMonth');
+                        if (!yearInput || !monthInput) return; // Modals closed before action
+
+                        const year = parseInt(yearInput.value);
+                        const month = parseInt(monthInput.value);
+
+                        // Perform validation
+                        if (isNaN(year) || year < 2000 || year > 2100) { return showNotification('Invalid year.', true); }
+                        if (isNaN(month) || month < 1 || month > 12) { return showNotification('Invalid month.', true); }
+
+                        const monthKey = `${year}-${month.toString().padStart(2, '0')}`;
+                        if (archivedMonths.hasOwnProperty(monthKey)) { return showNotification(`Archive for ${monthKey} already exists.`, true); }
+
+                        // Now, show the second confirmation modal
+                        setTimeout(() => { // Use a timeout to allow the first modal to close
+                            showConfirmationModal(
+                                'Confirm New Archive',
+                                `Create an empty archive for <strong>${monthKey}</strong> and switch to editing mode? Your current data will be saved.`,
+                                () => {
+                                    try {
+                                        // If not already editing, save current data to the staging area
+                                        if (!currentlyEditingArchiveKey) {
+                                            stagedCurrentData = { incomes: [...incomes], expenses: [...expenses] };
+                                            localStorage.setItem('stagedCurrentData', JSON.stringify(stagedCurrentData));
+                                        }
+
+                                        // Create the new empty archive entry
+                                        archivedMonths[monthKey] = {
+                                            incomes: [],
+                                            expenses: [],
+                                            pdfData: '',
+                                            timestamp: new Date().toISOString()
+                                        };
+                                        
+                                        // Load this new empty archive into the current workspace
+                                        incomes = [];
+                                        expenses = [];
+                                        currentlyEditingArchiveKey = monthKey;
+                                        saveData(); // Persist the new state
+
+                                        renderAllTabs();
+                                        switchTab('tracker');
+                                        showNotification(`New archive for ${monthKey} created and loaded for editing.`);
+                                    } catch (error) {
+                                        console.error("Error creating new archive:", error);
+                                        showNotification("Error creating new archive.", true);
+                                    }
+                                }
+                            );
+                        }, 10); // A small delay is sufficient
+
+                            }
+                        
+                );
+            });
             // Navigation
             navLinks.forEach(link => {
                 link.addEventListener('mousedown', (e) => { // Use mousedown to save before tab switch logic
@@ -3421,11 +3700,17 @@
                                 <label for="editExpenseCategory">Category</label>
                                 <select id="editExpenseCategory" required></select>
                             </div>
+                            <div class="form-group">
+                                <label for="editItemDate">Date & Time</label>
+                                <input type="datetime-local" id="editItemDate" value="${toLocalISOString(itemToEdit.date)}" required>
+                            </div>
                         `;
                         updateFunction = () => {
                             itemToEdit.amount = parseFloat(document.getElementById('editExpenseAmount').value);
                             itemToEdit.comment = document.getElementById('editExpenseComment').value;
                             itemToEdit.category = document.getElementById('editExpenseCategory').value;
+                            // Update the date from the new input
+                            itemToEdit.date = new Date(document.getElementById('editItemDate').value).toISOString();
                             showNotification('Expense updated successfully!');
                             return true; // Indicate success
                         };
@@ -3441,10 +3726,16 @@
                                 <label for="editIncomeAmount">Amount (₹)</label>
                                 <input type="number" id="editIncomeAmount" step="0.01" value="${itemToEdit.amount}" required>
                             </div>
+                            <div class="form-group">
+                                <label for="editItemDate">Date & Time</label>
+                                <input type="datetime-local" id="editItemDate" value="${toLocalISOString(itemToEdit.date)}" required>
+                            </div>
                         `;
                         updateFunction = () => {
                             itemToEdit.source = document.getElementById('editIncomeSource').value;
                             itemToEdit.amount = parseFloat(document.getElementById('editIncomeAmount').value);
+                            // Update the date from the new input
+                            itemToEdit.date = new Date(document.getElementById('editItemDate').value).toISOString();
                             showNotification('Income updated successfully!');
                             return true; // Indicate success
                         };
@@ -3743,51 +4034,51 @@
             notepadEditor.addEventListener('keyup', updateNotepadToolbar);
             notepadEditor.addEventListener('mouseup', updateNotepadToolbar);
             notepadEditor.addEventListener('focus', updateNotepadToolbar);
+
+            // Notepad Toolbar Event Listeners
+            notepadBoldBtn.addEventListener('click', () => {
+                document.execCommand('bold', false, null);
+                updateNotepadToolbar();
+                notepadEditor.focus();
             });
-       
-        // Notepad Toolbar Event Listeners
-        notepadBoldBtn.addEventListener('click', () => {
-            document.execCommand('bold', false, null);
-            updateNotepadToolbar();
-            notepadEditor.focus();
-        });
-        notepadUnderlineBtn.addEventListener('click', () => {
-            document.execCommand('underline', false, null);
-            updateNotepadToolbar();
-            notepadEditor.focus();
-        });
-        notepadItalicBtn.addEventListener('click', () => {
-            document.execCommand('italic', false, null);
-            updateNotepadToolbar();
-            notepadEditor.focus();
-        });
-        notepadIncreaseFontBtn.addEventListener('click', () => {
-            // 'increaseFontSize' is deprecated. Using 'fontSize' with values 1-7 is more reliable.
-            const currentSize = document.queryCommandValue('fontSize'); // Returns 1-7 as a string
-            let newSize = parseInt(currentSize || '3') + 1;
-            if (newSize > 7) newSize = 7;
-            document.execCommand('fontSize', false, newSize);
-            notepadEditor.focus();
-        });
-        notepadDecreaseFontBtn.addEventListener('click', () => {
-            // 'decreaseFontSize' is deprecated.
-            const currentSize = document.queryCommandValue('fontSize');
-            let newSize = parseInt(currentSize || '3') - 1;
-            if (newSize < 1) newSize = 1;
-            document.execCommand('fontSize', false, newSize);
-            notepadEditor.focus();
-        });
-        notepadClearFormatBtn.addEventListener('click', () => {
-            showConfirmationModal(
-                'Clear Notepad Content',
-                'Are you sure you want to permanently delete all content from the notepad? This action cannot be undone.',
-                () => {
-                    notepadEditor.innerHTML = '';
-                    saveNotepadContent();
-                    showNotification('Notepad content has been cleared.');
-                    notepadEditor.focus();
-                }
-            );
+            notepadUnderlineBtn.addEventListener('click', () => {
+                document.execCommand('underline', false, null);
+                updateNotepadToolbar();
+                notepadEditor.focus();
+            });
+            notepadItalicBtn.addEventListener('click', () => {
+                document.execCommand('italic', false, null);
+                updateNotepadToolbar();
+                notepadEditor.focus();
+            });
+            notepadIncreaseFontBtn.addEventListener('click', () => {
+                // 'increaseFontSize' is deprecated. Using 'fontSize' with values 1-7 is more reliable.
+                const currentSize = document.queryCommandValue('fontSize'); // Returns 1-7 as a string
+                let newSize = parseInt(currentSize || '3') + 1;
+                if (newSize > 7) newSize = 7;
+                document.execCommand('fontSize', false, newSize);
+                notepadEditor.focus();
+            });
+            notepadDecreaseFontBtn.addEventListener('click', () => {
+                // 'decreaseFontSize' is deprecated.
+                const currentSize = document.queryCommandValue('fontSize');
+                let newSize = parseInt(currentSize || '3') - 1;
+                if (newSize < 1) newSize = 1;
+                document.execCommand('fontSize', false, newSize);
+                notepadEditor.focus();
+            });
+            notepadClearFormatBtn.addEventListener('click', () => {
+                showConfirmationModal(
+                    'Clear Notepad Content',
+                    'Are you sure you want to permanently delete all content from the notepad? This action cannot be undone.',
+                    () => {
+                        notepadEditor.innerHTML = '';
+                        saveNotepadContent();
+                        showNotification('Notepad content has been cleared.');
+                        notepadEditor.focus();
+                    }
+                );
+            });
         });
     </script>
 </body>
