@@ -1272,6 +1272,11 @@
             transform: scale(1.05);
         }
 
+        /* NEW: Style for active/toggled notepad buttons */
+        .notepad-tool-btn.active {
+            background-color: var(--accent-highlight);
+            color: var(--bg-surface);
+        }
         .notepad-tool-btn .feather {
             width: 18px;
             height: 18px;
@@ -1739,14 +1744,6 @@
                         <button id="notepad-italic-btn" class="notepad-tool-btn" title="Italic"><i data-feather="italic"></i></button>
                         <button id="notepad-increase-font-btn" class="notepad-tool-btn" title="Increase Font Size"><i data-feather="plus"></i></button>
                         <button id="notepad-decrease-font-btn" class="notepad-tool-btn" title="Decrease Font Size"><i data-feather="minus"></i></button>
-                        <label for="notepad-text-color-picker" class="notepad-tool-btn" title="Text Color">
-                            <i data-feather="droplet"></i>
-                            <input type="color" id="notepad-text-color-picker" value="#2c3e50">
-                        </label>
-                        <label for="notepad-highlight-color-picker" class="notepad-tool-btn" title="Highlight Color">
-                            <i data-feather="edit-3"></i>
-                            <input type="color" id="notepad-highlight-color-picker" value="#f39c12">
-                        </label>
                         <button id="notepad-clear-format-btn" class="notepad-tool-btn" title="Clear All Content"><i data-feather="trash-2"></i></button>
                         <span id="notepad-save-status" style="margin-left: auto; font-size: 0.8rem; color: var(--text-secondary); opacity: 0; transition: opacity 0.5s ease-in-out;"></span>
                     </div>
@@ -1932,11 +1929,7 @@
         const notepadIncreaseFontBtn = document.getElementById('notepad-increase-font-btn');
         const notepadDecreaseFontBtn = document.getElementById('notepad-decrease-font-btn');
         const notepadClearFormatBtn = document.getElementById('notepad-clear-format-btn');
-        const notepadTextColorPicker = document.getElementById('notepad-text-color-picker');
-        const notepadHighlightColorPicker = document.getElementById('notepad-highlight-color-picker');
-
-        let savedNotepadSelection = null; // NEW: To store selection for color pickers
-
+        
         const notificationModal = document.getElementById('notificationModal');
         const closeNotificationModal = document.getElementById('closeNotificationModal');
         const notificationTitle = document.getElementById('notificationTitle');
@@ -2266,30 +2259,6 @@
             });
         }
 
-        // NEW: Notepad selection helper functions
-        function saveNotepadSelection() {
-            if (window.getSelection) {
-                const sel = window.getSelection();
-                if (sel.getRangeAt && sel.rangeCount) {
-                    // Check if the selection is inside our editor before saving
-                    const range = sel.getRangeAt(0);
-                    if (notepadEditor.contains(range.commonAncestorContainer)) {
-                        savedNotepadSelection = range;
-                    } else {
-                        savedNotepadSelection = null;
-                    }
-                }
-            }
-        }
-
-        function restoreNotepadSelection() {
-            if (savedNotepadSelection) {
-                const sel = window.getSelection();
-                sel.removeAllRanges();
-                sel.addRange(savedNotepadSelection);
-            }
-        }
-
         function saveNotepadContent() {
             // This function is now debounced
             localStorage.setItem('notepadContent', notepadEditor.innerHTML);
@@ -2305,6 +2274,13 @@
 
         function renderNotepadTab() {
             loadNotepadContent();
+        }
+
+        // NEW: Function to update the visual state of notepad toolbar buttons
+        function updateNotepadToolbar() {
+            notepadBoldBtn.classList.toggle('active', document.queryCommandState('bold'));
+            notepadUnderlineBtn.classList.toggle('active', document.queryCommandState('underline'));
+            notepadItalicBtn.classList.toggle('active', document.queryCommandState('italic'));
         }
 
         function switchTab(tabId) {
@@ -3686,18 +3662,9 @@
                     showNotification('Statistics report opened in new tab for download!');
                 }
             });
-            // Reports Tab
-            generateReportBtn.addEventListener('click', () => {
-                generateReport(reportStartDateInput.value, reportEndDateInput.value);
-            });
-            exportReportPdfBtn.addEventListener('click', exportReportToPdf);
-            // NEW: Financial Goal Planner Button
-            getGoalPlanBtn.addEventListener('click', () => {
-                goalInput.value = ''; // Clear previous input
-                goalPlanOutput.innerHTML = `<div class="empty-state"><i data-feather="lightbulb"></i><p>Enter your goal above to get a personalized plan.</p></div>`;
-                feather.replace();
-                goalPlannerModal.classList.add('active');
-            });
+            // The following listeners are for modals that are not triggered by any visible button in the UI.
+            // getGoalPlanBtn.addEventListener('click', () => { ... });
+            
             // NEW: Generate Goal Plan button inside the modal
             generateGoalPlanBtn.addEventListener('click', async () => {
                 const userGoal = goalInput.value.trim();
@@ -3772,22 +3739,26 @@
                 }
             });
 
-
-        // NEW: Save selection on mousedown for color pickers to prevent losing it
-        notepadTextColorPicker.parentElement.addEventListener('mousedown', saveNotepadSelection);
-        notepadHighlightColorPicker.parentElement.addEventListener('mousedown', saveNotepadSelection);
-
+            // NEW: Update toolbar state on selection change in the editor
+            notepadEditor.addEventListener('keyup', updateNotepadToolbar);
+            notepadEditor.addEventListener('mouseup', updateNotepadToolbar);
+            notepadEditor.addEventListener('focus', updateNotepadToolbar);
+            });
+       
         // Notepad Toolbar Event Listeners
         notepadBoldBtn.addEventListener('click', () => {
             document.execCommand('bold', false, null);
+            updateNotepadToolbar();
             notepadEditor.focus();
         });
         notepadUnderlineBtn.addEventListener('click', () => {
             document.execCommand('underline', false, null);
+            updateNotepadToolbar();
             notepadEditor.focus();
         });
         notepadItalicBtn.addEventListener('click', () => {
             document.execCommand('italic', false, null);
+            updateNotepadToolbar();
             notepadEditor.focus();
         });
         notepadIncreaseFontBtn.addEventListener('click', () => {
@@ -3818,26 +3789,6 @@
                 }
             );
         });
-        // FIX: Re-add missing text color listener and fix selection loss
-        notepadTextColorPicker.addEventListener('input', (e) => {
-            notepadEditor.focus();
-            restoreNotepadSelection();
-            document.execCommand('foreColor', false, e.target.value);
-            savedNotepadSelection = null; // Clear selection after use
-        });
-        // FIX: Fix selection loss for highlight color
-        notepadHighlightColorPicker.addEventListener('input', (e) => {
-            notepadEditor.focus();
-            restoreNotepadSelection();
-            // 'hiliteColor' is non-standard, 'backColor' is more widely supported
-            document.execCommand('backColor', false, e.target.value);
-            savedNotepadSelection = null; // Clear selection after use
-        });
-        });
     </script>
-
-
-
-
 </body>
 </html>
