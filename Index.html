@@ -1590,7 +1590,15 @@
                             <label for="quickExpenseComment">Comment (Optional)</label>
                             <input type="text" id="quickExpenseComment" placeholder="e.g., Groceries, Rent">
                         </div>
-                        <button type="submit" class="btn btn-primary btn-block"><i data-feather="plus-circle"></i> Add
+                        <div class="form-group">
+                            <input type="checkbox" id="isPastEntryCheckbox" style="margin-right: 0.5rem;">
+                            <label for="isPastEntryCheckbox" style="display: inline-block; margin-bottom: 0;">Is this a past entry?</label>
+                        </div>
+                        <div class="form-group" id="pastDateEntryGroup" style="display: none;">
+                            <label for="quickExpenseDate">Date & Time</label>
+                            <input type="datetime-local" id="quickExpenseDate">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block"><i data-feather="plus-circle"></i>Add
                             Expense</button>
                     </form>
                 </div>
@@ -1921,6 +1929,9 @@
         const quickAddExpenseForm = document.getElementById('quickAddExpenseForm');
         const quickExpenseAmountInput = document.getElementById('quickExpenseAmount');
         const quickExpenseCommentInput = document.getElementById('quickExpenseComment');
+        const isPastEntryCheckbox = document.getElementById('isPastEntryCheckbox'); // NEW
+        const pastDateEntryGroup = document.getElementById('pastDateEntryGroup'); // NEW
+        const quickExpenseDateInput = document.getElementById('quickExpenseDate'); // NEW
         const quickAddExpenseCategorySelect = document.getElementById('quickAddExpenseCategory');
         const recentExpensesList = document.getElementById('recentExpensesList');
 
@@ -2513,13 +2524,14 @@
         }
 
         // --- Expenses Tab Functions ---
-        function addExpense(amount, comment, category) {
+        function addExpense(amount, comment, category, date) {
             const newExpense = {
                 id: Date.now(),
                 amount: parseFloat(amount),
                 comment,
                 category,
-                date: new Date().toISOString()
+                // Use the provided date, or default to now if it's missing
+                date: date ? new Date(date).toISOString() : new Date().toISOString()
             };
             expenses.push(newExpense);
             saveData();
@@ -3811,14 +3823,32 @@
                 const amount = quickExpenseAmountInput.value;
                 const comment = quickExpenseCommentInput.value.trim();
                 const category = quickAddExpenseCategorySelect.value;
+                let date = null; // Default to null
+
+                if (isPastEntryCheckbox.checked) {
+                    date = quickExpenseDateInput.value;
+                }
 
                 if (amount && category) {
-                    addExpense(amount, comment || 'Miscellaneous', category);
+                    addExpense(amount, comment || 'Miscellaneous', category, date);
                     quickAddExpenseForm.reset();
+                    pastDateEntryGroup.style.display = 'none'; // Re-hide the date input after submission
                 } else {
                     showNotification('Please enter amount and select a category.', true);
                 }
             });
+
+            // NEW: Event listener for the "Is past entry?" checkbox
+            isPastEntryCheckbox.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    pastDateEntryGroup.style.display = 'block';
+                    quickExpenseDateInput.value = toLocalISOString(new Date().toISOString()); // Set to now by default
+                } else {
+                    pastDateEntryGroup.style.display = 'none';
+                }
+            });
+
+
             // Categories Tab
             addCategoryForm.addEventListener('submit', (e) => {
                 e.preventDefault();
