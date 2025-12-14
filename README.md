@@ -129,6 +129,8 @@ You are free to:
 * Sell
 
 Provided the original copyright and license notice are included.
+## License
+MIT License — see [LICENSE](./LICENSE)
 
 See the **LICENSE** file for full license text.
 
