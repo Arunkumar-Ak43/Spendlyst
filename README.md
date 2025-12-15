@@ -23,15 +23,16 @@ The application is built with a **mobile-first approach**, focusing on usability
 ## 📸 Screenshots
 
 <p align="center">
+  <img src="screenshots/Logo.png" width="220" />
   <img src="screenshots/dashboard.png" width="220" />
   <img src="screenshots/income.png" width="220" />
   <img src="screenshots/add-expense.png" width="220" />
-  <img src="screenshots/Catogories.png" width="220" />
-  <img src="screenshots/statistics.png" width="220" />
-  <img src="screenshots/Notepad.png" width="220" />
 </p>
 
 <p align="center">
+  <img src="screenshots/Catogories.png" width="220" />
+  <img src="screenshots/statistics.png" width="220" />
+  <img src="screenshots/Notepad.png" width="220" />
   <img src="screenshots/settings.png" width="220" />
 </p>
 
