@@ -42,5 +42,4 @@ android {
 dependencies {
     // Required for AppCompatActivity and its themes
     implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation "androidx.core:core-splashscreen:1.0.1"
 }
