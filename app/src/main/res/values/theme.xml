@@ -1,6 +1,11 @@
-<style name="Theme.Spendlyst.Splash" parent="Theme.SplashScreen">
-    <item name="windowSplashScreenBackground">@color/black</item>
-    <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
-    <item name="windowSplashScreenAnimationDuration">2000</item>
-    <item name="postSplashScreenTheme">@style/Theme.Spendlyst</item>
-</style>
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Splash screen theme for Android 12+ -->
+    <style name="Theme.Spendlyst.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@android:color/black</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="postSplashScreenTheme">@style/Theme.Spendlyst</item>
+    </style>
+
+</resources>
