@@ -13,7 +13,7 @@ The application is built with a **mobile-first approach**, focusing on usability
 * 🧮 Automatic remaining balance calculation
 * 📈 Monthly expense summaries & insights
 * 💾 Offline-first local data storage
-* 📤 Export data (JSON / CSV / PDF)
+* 📤 Export data (PDF)
 * 🔄 Monthly reset while preserving history
 * 🚀 Fast startup with splash screen branding
 * 🎨 Clean and responsive UI
